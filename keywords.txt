@@ -1,0 +1,38 @@
+#######################################
+# Syntax colouring for CrsfPort
+#
+# Fields are separated by a literal TAB, not spaces. The IDE's parser splits on
+# tab and silently ignores any line that uses spaces, so a tidied version of
+# this file looks perfectly fine and highlights nothing.
+#######################################
+
+CrsfPort	KEYWORD1
+crsf_handle_t	KEYWORD1
+crsf_channels_t	KEYWORD1
+crsf_battery_t	KEYWORD1
+crsf_attitude_t	KEYWORD1
+crsf_gps_t	KEYWORD1
+
+begin	KEYWORD2
+loop	KEYWORD2
+end	KEYWORD2
+port	KEYWORD2
+linkUp	KEYWORD2
+channels	KEYWORD2
+channel	KEYWORD2
+channelUs	KEYWORD2
+sendChannels	KEYWORD2
+telemetryInterval	KEYWORD2
+publishBattery	KEYWORD2
+publishAttitude	KEYWORD2
+publishGps	KEYWORD2
+publishFlightMode	KEYWORD2
+onFrame	KEYWORD2
+baudrate	KEYWORD2
+parserStats	KEYWORD2
+
+CRSF_ROLE_RX	LITERAL1
+CRSF_ROLE_TX	LITERAL1
+CRSF_TYPE_BATTERY	LITERAL1
+CRSF_TYPE_ATTITUDE	LITERAL1
+CRSF_TYPE_GPS	LITERAL1

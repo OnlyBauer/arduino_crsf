@@ -1,93 +1,135 @@
-# arduino_crsf
+# CrsfPort — CRSFv3 for Arduino
 
+A complete implementation of the [TBS CRSFv3 specification](https://github.com/tbs-fpv/tbs-crsf-spec),
+as an Arduino library, usable as either end of a Crossfire link.
 
+```cpp
+#include <CrsfPort.h>
 
-## Getting started
+CrsfPort crsf(Serial1);
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+void setup() { crsf.begin(416666, CRSF_ROLE_RX); }
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://git.bauer.pub/Bauer/arduino_crsf.git
-git branch -M main
-git push -uf origin main
+void loop() {
+    crsf.loop();
+    if (crsf.linkUp()) {
+        uint16_t throttle = crsf.channelUs(2);   // about 988..2012
+    }
+}
 ```
 
-## Integrate with your tools
+## Status: 0.1.0, not hardware-verified
 
-* [Set up project integrations](https://git.bauer.pub/Bauer/arduino_crsf/-/settings/integrations)
+This library compiles for ESP32, STM32, RP2040 and SAMD, and passes its host
+suites against a mock Arduino runtime. It has **not** been run on a board, or
+against a radio, a receiver, or any physical CRSF peer. The author has no
+Arduino hardware.
 
-## Collaborate with your team
+[COMPLIANCE.md](COMPLIANCE.md) §6 says exactly what is and is not established.
+`examples/CrsfLoopbackSelfTest` closes most of the gap with one board and one
+jumper wire, and a result from it is worth sending back.
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+## What it is
 
-## Test and Deploy
+The protocol is not implemented here. It is
+[c_crsf](https://git.bauer.pub/Bauer/c_crsf), vendored flat into `src/` and
+shared with the ESP-IDF and STM32 ports — so the frame layer, the telemetry
+scheduler, the parameter protocol, the tunnels, routing and baudrate negotiation
+are the same code that has been flying on an ESP32. Not a second implementation
+of the same specification, which is how two implementations start to disagree.
 
-Use the built-in continuous integration in GitLab.
+What is in this repository is about 150 lines of C++ that read a `Stream`, feed
+it to that core, and give `micros()` to it as a clock.
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+## The whole API, not just the methods
 
-***
+There are about fifteen convenience methods, for what a short sketch actually
+does: `linkUp()`, `channel()`, `channelUs()`, `publishBattery()`,
+`telemetryInterval()`, `onFrame()` and so on.
 
-# Editing this README
+Everything else — the parameter protocol, the MAVLink and MSP tunnels, `0x32`
+Direct Commands, routing, and every one of the ~120 `crsf_send_*` and
+`crsf_publish_*` functions — is the C API, reached through the implicit
+conversion:
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+```cpp
+crsf_publish_gps(crsf, &gps);
+crsf_mavlink_send(crsf, CRSF_ADDR_FLIGHT_CONTROLLER, frame, len);
+crsf_params_attach_provider(crsf.port(), &provider);
+```
 
-## Suggestions for a good README
+That is deliberate. Wrapping all of them would double the documentation,
+guarantee that a function added upstream silently does not appear here, and buy
+nothing: Arduino builds with `-ffunction-sections -Wl,--gc-sections`, so an
+unreferenced C function costs exactly as little as an unreferenced method would.
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+## Architecture support
 
-## Name
-Choose a self-explaining name for your project.
+`architectures=esp32,stm32,rp2040,samd`.
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+**AVR is not supported, and the numbers are not close.** A port needs about
+**3552 bytes** of RAM, measured. An ATmega328P has **2048** in total — before
+`HardwareSerial`'s two 64-byte rings, before the stack, before your sketch.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+| Configuration | RAM | against 2048 |
+| --- | --- | --- |
+| Full | 3552 B | **173 %** |
+| without the tunnels | 1947 B | 95 % |
+| without tunnels *and* parameters | 1499 B | 73 % |
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+The last row leaves about 550 bytes for everything else, and what it leaves is a
+library that can no longer do the parameter protocol or the tunnels — that is,
+the popular subset this project exists not to be. So `src/crsf_arduino_conf.h`
+stops the build with an `#error` rather than letting the IDE fail somewhere
+inside the linker with a message nobody can act on.
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+Flash is *estimated* at 25–40 KB against an ATmega328P's 32256 usable, and is
+labelled an estimate because no one has measured it: there is no `avr-gcc` here.
+When the `size-avr` CI job has run, this table gets real numbers.
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+Boards not listed are not refused, only untested. `esp8266` and
+`renesas_uno` (UNO R4, 32 KB of RAM) would probably work; they will be added
+here in the same commit that adds them to the CI matrix, and not before.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+## Threading
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+There is no lock. A sketch is single-threaded: `loop()` feeds the port and the
+sketch calls the API from that same `loop()`.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+If that stops being true — a second FreeRTOS task on an ESP32, or telemetry
+published from an interrupt — fill in `ops_.lock` and `ops_.unlock` in
+`CrsfPort::begin()`. Leaving them empty in that case is silently wrong rather
+than loudly wrong, which is why it is said here and in the source rather than
+left to be discovered.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+## Installing
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+Not in the Library Manager index. Clone or download it into your `libraries`
+folder, with the folder named **`CrsfPort`**:
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+```sh
+cd ~/Documents/Arduino/libraries
+git clone https://git.bauer.pub/Bauer/arduino_crsf.git CrsfPort
+```
 
-## License
-For open source projects, say how it is licensed.
+For PlatformIO, add the repository to `lib_deps`.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+## Testing
+
+```sh
+make -C tests            # the wrapper, against a mock Arduino runtime
+make -C tests sanitize   # the same under ASan and UBSan
+```
+
+Read `tests/arduino_stubs/Arduino.h` before trusting a pass: there is no board in
+it, no real UART and no real clock. It tests the wrapper's logic — reading,
+feeding, ticking, the 32-bit `micros()` widening and the refuse-rather-than-block
+write path — and nothing else.
+
+## Licence
+
+[Apache-2.0](LICENSE). The vendored core files in `src/` are a verbatim copy of
+[c_crsf](https://git.bauer.pub/Bauer/c_crsf) under the same licence; its
+`LICENSE` and `NOTICE` are kept in `extras/vendor/`. The CRSF V3 specification is
+not redistributed here; it lives in the c_crsf repository, where the code that
+cites it is.

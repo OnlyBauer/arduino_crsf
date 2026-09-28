@@ -1,0 +1,44 @@
+# Editor-Vorgaben, passend zu .clang-format. Diese Datei erzwingt nichts — sie
+# sorgt nur dafür, dass ein Editor die Regeln schon beim Tippen einhält, statt
+# dass tools/ci.sh lint sie hinterher bemängelt. Von VS Code, CLion und
+# Visual Studio ohne Erweiterung gelesen.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{c,h}]
+indent_style = space
+indent_size = 4
+
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+[*.py]
+indent_style = space
+indent_size = 4
+
+[{Makefile,*.mk}]
+# Make verlangt echte Tabulatoren am Anfang einer Rezeptzeile.
+indent_style = tab
+
+[*.ps1]
+end_of_line = crlf
+indent_style = space
+indent_size = 2
+
+[*.md]
+# Zwei abschließende Leerzeichen sind in Markdown ein harter Zeilenumbruch.
+trim_trailing_whitespace = false
+
+[tbs-crsf-spec/**]
+# Fremdes Submodul, nicht anfassen.
+charset = unset
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset

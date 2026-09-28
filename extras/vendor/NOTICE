@@ -1,0 +1,24 @@
+esp_crsf — CRSFv3 protocol component for ESP-IDF
+Copyright 2026 Maximilian Bauer
+
+Licensed under the Apache License, Version 2.0. See the LICENSE file for the
+full terms, and NOTICE (this file) for the attribution that must travel with
+redistributions.
+
+--------------------------------------------------------------------------------
+
+Reference documentation, not part of the compiled component:
+
+  tbs-crsf-spec/ is a git submodule containing the CRSF V3 Protocol
+  Specification, © 2020 TBS Avionics Co LTD, licensed under Creative Commons
+  Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).
+
+  That document is aggregated alongside this software, not incorporated into
+  it. No source file in this component is copied or adapted from its text; the
+  code implements the protocol the document describes, and copyright covers the
+  document's expression rather than the protocol itself. The submodule is not
+  required to build, and its ShareAlike term therefore does not extend to this
+  component.
+
+  Comments in the sources cite that specification by line number, for example
+  "crsf.md:527". Those are references, not quotations.

@@ -1,0 +1,82 @@
+# Formatvorgabe für esp_crsf, geprüft von tools/ci.sh lint und der Stufe lint
+# in .gitlab-ci.yml. clang-format liegt der ESP-IDF-Installation bereits bei
+# (esp-clang/*/esp-clang/bin), es ist also keine zusätzliche Abhängigkeit.
+#
+# Diese Datei beschreibt den Stil, den das Repository ohnehin schon hatte; sie
+# führt keinen neuen ein. Gemessen wurde gegen die fertigen Standardstile, und
+# alle passen schlecht: LLVM und Google ändern rund 130 % der Zeilen, GNU und
+# Mozilla über 160 %, WebKit als bester noch 28 %. Mit den Einstellungen unten
+# blieben 15 %, und davon entfielen zwei Fünftel auf die zwei handausgerichteten
+# Tabellen in crsf_crc.c und crsf_protocol.h — beide sind jetzt mit
+# `clang-format off` ausgenommen, weil ihre Ausrichtung Absicht ist.
+#
+# Der Stil in einem Satz: Linux-Klammern, vier Leerzeichen, Stern am Namen,
+# kein automatischer Umbruch.
+
+BasedOnStyle: LLVM
+
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+
+# Kein Zeilenlimit, also bricht clang-format nichts um, was schon umgebrochen
+# ist. Das ist der wichtigste Schalter hier: mit einem Limit formatiert das
+# Werkzeug jeden Ausdruck neu nach eigenem Geschmack und der Umbau wird groß,
+# ohne dass eine Zeile dadurch besser lesbar würde. Die Zeilenlänge bleibt
+# damit Sache des Autors — der Bestand liegt bis auf zwei Dateien unter 100
+# Spalten und soll das auch bleiben.
+ColumnLimit: 0
+
+# Funktionsrumpf-Klammer auf eigener Zeile, Kontrollfluss-Klammer dahinter.
+BreakBeforeBraces: Linux
+
+# uint8_t *out, nicht uint8_t* out.
+PointerAlignment: Right
+ReferenceAlignment: Right
+
+# Die Include-Reihenfolge ist gewollt (eigener Header zuerst, dann System),
+# clang-format soll sie nicht alphabetisch umsortieren.
+SortIncludes: Never
+
+# Auch ein einzeiliger Rumpf gehört bei einer Funktion auf eigene Zeilen; die
+# kurze Form `if (!r) { return false; }` bei Wächtern bleibt dagegen erlaubt.
+AllowShortFunctionsOnASingleLine: None
+AllowShortBlocksOnASingleLine: Always
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+
+# (uint8_t)x, nicht (uint8_t) x.
+SpaceAfterCStyleCast: false
+
+# case auf der Höhe des switch, wie im Bestand.
+IndentCaseLabels: false
+IndentGotoLabels: false
+IndentPPDirectives: None
+
+# Ausrichtung nicht erzwingen: der Bestand richtet `=` in manchen Blöcken
+# bewusst aus und in anderen bewusst nicht. Ein globales Consecutive hat den
+# Umbau messbar vergrößert (15 % -> 17 %), weil es die nicht ausgerichteten
+# Stellen umschreibt. Wo Ausrichtung Absicht ist, steht sie unter
+# `clang-format off`.
+AlignConsecutiveAssignments: None
+AlignConsecutiveDeclarations: None
+AlignConsecutiveMacros: None
+AlignTrailingComments: true
+AlignEscapedNewlines: Left
+AlignAfterOpenBracket: Align
+AlignOperands: Align
+
+# Kommentare nicht neu umbrechen. Die Dateien sind stark kommentiert, oft mit
+# Absätzen, Aufzählungen und Spaltentabellen darin; ein Reflow zerlegt die.
+ReflowComments: false
+
+# Argumente und Parameter dicht packen statt einen pro Zeile.
+BinPackArguments: true
+BinPackParameters: true
+
+# Leerzeile am Blockanfang entfernen, mehrfache Leerzeilen auf eine begrenzen.
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+
+InsertNewlineAtEOF: true

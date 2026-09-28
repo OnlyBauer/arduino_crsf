@@ -1,0 +1,27 @@
+# Host unit-test output
+build_tests/
+
+# Stray gcov annotations
+*.gcov
+*.gcda
+*.gcno
+
+# Generated API documentation (run `doxygen` to rebuild)
+docs/
+
+# Arduino / PlatformIO build output
+.pio/
+.arduino15/
+.arduino-dl/
+.arduino-user/
+build_arduino/
+
+# Cygwin crash dumps
+*.stackdump
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+.DS_Store

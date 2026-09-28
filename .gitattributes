@@ -1,0 +1,47 @@
+# Zeilenenden festnageln. Die Bibliothek wird auf Windows entwickelt und in
+# Linux-Containern gebaut; ohne diese Datei hängt es an der lokalen
+# core.autocrlf-Einstellung, ob ein Commit CRLF in das Repository trägt.
+#
+# `* text=auto` normalisiert alles, was Git für Text hält, im Repository auf LF.
+# Die Auszeichnungen darunter nehmen die Heuristik aus dem Spiel.
+
+* text=auto
+
+*.c    text eol=lf
+*.h    text eol=lf
+*.md   text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.py   text eol=lf
+*.sh   text eol=lf
+*.cmake text eol=lf
+CMakeLists.txt text eol=lf
+Makefile text eol=lf
+Doxyfile text eol=lf
+VERSION  text eol=lf
+.clang-format text eol=lf
+.clang-tidy   text eol=lf
+.editorconfig text eol=lf
+.gitattributes text eol=lf
+
+# Auch .txt, und zwar aus einem konkreten Grund: tests/golden_trace.txt wird
+# byteweise mit dem verglichen, was der Lauf erzeugt. Ohne diese Zeile macht
+# core.autocrlf=true daraus im Arbeitsbaum CRLF, der Vergleich schlaegt bei
+# jedem ausser dem Entwickler fehl -- und zwar mit einer Diff-Ausgabe, die wie
+# ein echter Protokollfehler aussieht.
+*.txt  text eol=lf
+
+# keywords.txt braucht echte Tabulatoren; die IDE trennt daran und ignoriert
+# eine Zeile mit Leerzeichen stillschweigend.
+keywords.txt text eol=lf
+
+# PowerShell erwartet CRLF.
+*.ps1  text eol=crlf
+
+# Der eingebettete Kern ist eine Kopie von c_crsf und wird hier nicht
+# angefasst. Er liegt flach in src/, weil das Arduino-1.5-Format nur src/
+# selbst auf den Include-Pfad legt -- ein Unterverzeichnis wuerde Aenderungen
+# an den eingebetteten Dateien erzwingen.
+src/crsf_*.h linguist-vendored
+src/crsf_*.c linguist-vendored
+.gitmodules text eol=lf
