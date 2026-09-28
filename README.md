@@ -126,6 +126,18 @@ it, no real UART and no real clock. It tests the wrapper's logic — reading,
 feeding, ticking, the 32-bit `micros()` widening and the refuse-rather-than-block
 write path — and nothing else.
 
+## Related repositories
+
+Four repositories, one protocol implementation. The core is vendored into
+each port rather than depended on, so a port is complete on its own; see any
+port's *Vendored core* page for why.
+
+| | | |
+| --- | --- | --- |
+| [**c_crsf**](https://git.bauer.pub/Bauer/c_crsf) | the protocol, with no platform attached | C11 + libm |
+| [**esp_crsf**](https://git.bauer.pub/Bauer/esp_crsf) | ESP-IDF component | verified on ESP32 and ESP32-C3 |
+| [**stm_crsf**](https://git.bauer.pub/Bauer/stm_crsf) | STM32Cube HAL, DMA | **not yet hardware-verified** |
+| [**arduino_crsf**](https://git.bauer.pub/Bauer/arduino_crsf) | Arduino library, class `CrsfPort` | *you are here* |
 ## Licence
 
 [Apache-2.0](LICENSE). The vendored core files in `src/` are a verbatim copy of

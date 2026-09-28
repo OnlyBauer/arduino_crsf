@@ -17,7 +17,16 @@ and against `library.json`, which must agree.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- A wiki: **Getting started**, **Hardware status** and **Vendored core**.
+- `tools/wiki_build.py` and the sync scripts, with a `wiki` CI job.
+- A *Related repositories* table in the README.
+
+### Fixed
+
+- `build_wiki/` was missing from `.gitignore`, so generated pages were being
+  staged. It is ignored in the other three repositories; now here too.
 
 ## [0.1.0] — 2026-09-28
 

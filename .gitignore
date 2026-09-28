@@ -9,6 +9,9 @@ build_tests/
 # Generated API documentation (run `doxygen` to rebuild)
 docs/
 
+# Generated wiki pages and the clone of the wiki repository (tools/wiki-sync.sh)
+build_wiki/
+
 # Arduino / PlatformIO build output
 .pio/
 .arduino15/

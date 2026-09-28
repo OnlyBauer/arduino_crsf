@@ -254,6 +254,41 @@ doxygen:
   script:
     - doxygen Doxyfile
 
+# Das Wiki aus dem Repository nachziehen. GitLab hält ein Projekt-Wiki in einem
+# eigenen Git-Repo direkt neben dem Projekt (<pfad>.wiki.git), Veröffentlichen
+# ist also clone-commit-push und braucht keine API. tools/wiki_build.py erzeugt
+# die Seiten aus README, COMPLIANCE, den Dateikommentaren der Beispiele und den
+# @brief der Module; tools/wiki-sync.sh schiebt sie hoch.
+#
+# Warum ein eigener Token: CI_JOB_TOKEN darf lesen, aber in kein Git-Repo
+# schreiben — ein Push damit endet mit 403. Nötig ist ein Project Access Token
+# (Rolle Developer, Scope write_repository) als maskierte CI-Variable WIKI_TOKEN.
+# Bei einem Deploy-Token zusätzlich WIKI_TOKEN_USER auf dessen Benutzernamen.
+# Das Wiki muss außerdem unter Settings → General → Visibility aktiviert sein.
+#
+# Solange WIKI_TOKEN fehlt, existiert dieser Job gar nicht (rules unten): die
+# Pipeline bleibt grün, statt an einer nicht gesetzten Variablen zu scheitern.
+#
+# Nur auf dem Default-Branch, und weil docs die letzte Stufe ist, erst wenn test
+# und build durch sind — ein Wiki, das einen kaputten Stand beschreibt, ist
+# schlechter als ein etwas älteres.
+wiki:
+  stage: docs
+  image: alpine:3.20
+  before_script:
+    # git, weil tools/wiki-sync.sh das Wiki-Repo klont und hineinschiebt. bash,
+    # weil die Skripte in tools/ dagegen geschrieben und getestet sind; alpine
+    # bringt nur ash mit. python3 für tools/wiki_build.py.
+    - apk add --no-cache bash git python3
+  script:
+    # Ausdrücklich über bash und nicht als ./tools/wiki-sync.sh: das x-Bit
+    # überlebt einen Commit von einem Windows-Klon nicht zwangsläufig
+    # (core.filemode=false), und ein Job, der daran mit "Permission denied"
+    # stirbt, wäre schwer zu erklären.
+    - bash tools/wiki-sync.sh --push
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $WIKI_TOKEN'
+
 # GitLab Pages: die generierte API-Dokumentation von main veröffentlichen.
 #
 # Blockiert die Pipeline nicht, und zwar aus einem Grund, der nichts mit diesem
