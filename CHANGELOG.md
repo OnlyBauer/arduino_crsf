@@ -31,6 +31,14 @@ and against `library.json`, which must agree.
 
 ### Added
 
+- Four examples porting the remaining esp_crsf demos that `0.1.0` shipped
+  without: `CrsfTxStation` (the handset end, pairing with `CrsfRxStation`),
+  `CrsfParameterHost` (discovers devices and walks their parameter tree),
+  `CrsfParameterDevice` (serves a parameter tree of every usable type), and
+  `CrsfCommandsAndTunnel` (0x32 Direct Commands, MAVLink and MSP tunnels).
+  `library.properties`'s `architectures=esp32,stm32,rp2040,samd` and the
+  `build-examples` CI matrix apply to these the same as to the first two;
+  verified against esp32:esp32:esp32 with `arduino-cli compile`.
 - A wiki: **Getting started**, **Hardware status** and **Vendored core**.
 - `tools/wiki_build.py` and `tools/wiki-sync.sh`, for building and publishing
   the wiki by hand.
@@ -50,6 +58,14 @@ and against `library.json`, which must agree.
 
 ### Fixed
 
+- The generated **Examples** wiki page never showed a description for any
+  Arduino sketch: `tools/wiki_build.py` only recognises a Doxygen-style
+  `/** ... */` file header, and both example `.ino` files used a plain `/*
+  ... */` block instead, matching the esp_crsf examples' style everywhere
+  except that leading marker. All six example headers (the two existing ones
+  plus the four new) now use `/* SPDX-License-Identifier: ... */` followed by
+  a `/** @brief ... */` block, exactly as esp_crsf's `main.c` files do, which
+  also fixes it there.
 - The `build-examples` CI job failed on every board: `examples/CrsfRxStation`
   called nine functions it never defined — `applyControls()`,
   `enterFailsafe()`, four battery readings and three attitude readings —

@@ -1,5 +1,6 @@
-/*
- * CrsfRxStation — the craft end of a Crossfire link.
+/* SPDX-License-Identifier: Apache-2.0 */
+/**
+ * @brief CrsfRxStation — the craft end of a Crossfire link.
  *
  * Reads the stick positions a transmitter sends and answers with telemetry,
  * paced by the library rather than by this sketch.
@@ -15,8 +16,6 @@
  * message. A sketch that reads channels without checking linkUp() will happily
  * keep flying on the last stick positions it saw, which is the single most
  * dangerous thing this library can be made to do. Check it. This example does.
- *
- * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <CRSFv3.h>

@@ -1,5 +1,6 @@
-/*
- * CrsfLoopbackSelfTest — round-trip every frame type through a real UART.
+/* SPDX-License-Identifier: Apache-2.0 */
+/**
+ * @brief CrsfLoopbackSelfTest — round-trip every frame type through a real UART.
  *
  * This is the most useful sketch here. Everything else in this library has been
  * checked on a host against a mock Arduino runtime, which proves the logic and
@@ -20,8 +21,6 @@
  *
  * If it passes on your board, that is evidence worth having: the board, the core
  * version and the result are worth adding to COMPLIANCE.md section 6.
- *
- * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <CRSFv3.h>
