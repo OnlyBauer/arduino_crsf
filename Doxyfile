@@ -72,6 +72,17 @@ GENERATE_HTML          = YES
 HTML_OUTPUT            = html
 GENERATE_LATEX         = NO
 GENERATE_TREEVIEW      = YES
+
+# The self-hosted GitLab instance's nginx caps requests at 1 MB, which is what
+# the `pages` job uploads the generated HTML as. VERBATIM_HEADERS's per-header
+# "browse the raw source" pages and SEARCHENGINE's client-side index are the
+# two biggest single contributors to that size, and neither is load-bearing:
+# the API docs (@brief/@param/etc.) are unaffected, the source is one click
+# away in the repository itself, and the sidebar tree plus the module/file
+# index pages still navigate the docs without a search box.
+SOURCE_BROWSER         = NO
+VERBATIM_HEADERS       = NO
+SEARCHENGINE           = NO
 SORT_MEMBER_DOCS       = NO
 SORT_BRIEF_DOCS        = NO
 JAVADOC_AUTOBRIEF      = NO

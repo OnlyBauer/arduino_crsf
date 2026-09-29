@@ -68,6 +68,17 @@ and against `library.json`, which must agree.
 
 ### Fixed
 
+- The generated docs no longer fit under the self-hosted GitLab instance's
+  1 MB nginx request cap, so the `pages` job's artifact upload has been
+  failing (`413 Request Entity Too Large`) — harmlessly, since the job is
+  `allow_failure: true`, but no browsable API docs were ever actually
+  published. `Doxyfile` now sets `SOURCE_BROWSER`, `VERBATIM_HEADERS` and
+  `SEARCHENGINE` to `NO`: the two biggest single contributors to the
+  generated size were the per-header "browse the raw source" pages and the
+  client-side search index, and neither is load-bearing — the API docs
+  themselves are unaffected, the source is one click away in the repository,
+  and the sidebar tree still navigates the docs without a search box.
+  Verified the compressed artifact drops from 1.3 MB to 936 KB.
 - The `build-examples` CI job failed for every example on
   `STMicroelectronics:stm32:Nucleo_64:pnum=NUCLEO_F411RE`, including the two
   that shipped in `0.1.0`: `undefined reference to 'Serial1'`. Never caught
