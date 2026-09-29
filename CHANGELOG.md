@@ -50,6 +50,15 @@ and against `library.json`, which must agree.
 
 ### Fixed
 
+- `make -C tests sanitize` failed to build: it compiled the vendored core's `.c`
+  files with `$(CXX)` directly. `g++` compiles by C++ rules regardless of file
+  extension (unlike `gcc`, which detects the language from it), so under
+  `-Werror` this rejected plain-C idioms the core relies on — a `bool`-to-`uint8_t`
+  narrowing conversion, a partial aggregate initializer, and an enum/`int`
+  ternary. `make` (the non-sanitized target) never hit this because its pattern
+  rule already compiles `.c` objects with `$(CC)`. `sanitize` now does the same:
+  the core is compiled to `.san.o` objects with `$(CC)` and the sanitizer flags,
+  then linked with `$(CXX)`, matching how the library is actually built.
 - There was no `.clang-tidy` at all, so the `lint` job ran with defaults.
 - Three files did not match `.clang-format`.
 - clang-tidy analysed the vendored core as C++ and reported

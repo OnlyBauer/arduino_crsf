@@ -67,11 +67,16 @@ run: $(BINS)
 	if [ $$fail -ne 0 ]; then echo "SOME TESTS FAILED"; exit 1; fi; \
 	echo "All $$expected suites passed."
 
-sanitize: | $(BUILD)
+SAN_CORE_OBJS := $(addprefix $(BUILD)/,$(CORE_SRCS:.c=.san.o))
+
+$(BUILD)/%.san.o: ../src/%.c | $(BUILD)
+	$(CC) $(CFLAGS) $(SANFLAGS) -I../src -c $< -o $@
+
+sanitize: $(SAN_CORE_OBJS) | $(BUILD)
 	@for s in $(SUITES); do \
 	  $(CXX) $(CXXFLAGS) $(SANFLAGS) -I../src -I. -Iarduino_stubs \
 	      -o $(BUILD)/$$s.san $$s.cpp $(CXX_SRCS) \
-	      $(addprefix ../src/,$(CORE_SRCS)) $(LDLIBS) || exit 1; \
+	      $(SAN_CORE_OBJS) $(LDLIBS) || exit 1; \
 	  ./$(BUILD)/$$s.san || exit 1; \
 	done
 	@echo "Sanitized suites passed."
