@@ -50,6 +50,15 @@ and against `library.json`, which must agree.
 
 ### Fixed
 
+- The `build-examples` CI job failed on every board: `examples/CrsfRxStation`
+  called nine functions it never defined — `applyControls()`,
+  `enterFailsafe()`, four battery readings and three attitude readings —
+  meant as stand-ins for a real application's own sensor and control code, but
+  never actually given bodies, so the sketch could not compile on any board.
+  It now defines each as a trivial stub returning `0` (or doing nothing),
+  clearly commented as a placeholder to replace with a real read. Caught by
+  `arduino-cli compile` for `esp32:esp32:esp32`; pre-existing since the
+  `0.1.0` tag.
 - `make -C tests sanitize` failed to build: it compiled the vendored core's `.c`
   files with `$(CXX)` directly. `g++` compiles by C++ rules regardless of file
   extension (unlike `gcc`, which detects the language from it), so under

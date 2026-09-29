@@ -18,6 +18,7 @@ build_wiki/
 .arduino-dl/
 .arduino-user/
 build_arduino/
+examples/*/build/
 
 # Cygwin crash dumps
 *.stackdump

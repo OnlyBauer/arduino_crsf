@@ -23,6 +23,46 @@
 
 CRSFv3 crsf(Serial1);
 
+/* Stand-ins for this sketch's own flight-control and sensor code. Replace
+ * each with a real read; they exist here only so the example compiles. */
+void applyControls(uint16_t throttleUs, uint16_t aileronUs)
+{
+    (void)throttleUs;
+    (void)aileronUs;
+}
+
+void enterFailsafe() {}
+
+int16_t readPackDecivolts()
+{
+    return 0;
+}
+int16_t readPackDeciamps()
+{
+    return 0;
+}
+uint32_t readMahUsed()
+{
+    return 0;
+}
+uint8_t readPercentRemaining()
+{
+    return 0;
+}
+
+int16_t readPitchCentiradians()
+{
+    return 0;
+}
+int16_t readRollCentiradians()
+{
+    return 0;
+}
+int16_t readYawCentiradians()
+{
+    return 0;
+}
+
 void setup()
 {
     Serial.begin(115200); /* the console */
