@@ -58,6 +58,25 @@ and against `library.json`, which must agree.
 
 ### Fixed
 
+- The `build-examples` CI job failed for every example on
+  `STMicroelectronics:stm32:Nucleo_64:pnum=NUCLEO_F411RE`, including the two
+  that shipped in `0.1.0`:
+  `undefined reference to 'Serial1'`. Unlike ESP32, RP2040 and SAMD, the
+  STM32 core does not provide a global `Serial1` — a `HardwareSerial` exists
+  only where the sketch declares one. All six examples now declare
+  `HardwareSerial Serial1(PA10, PA9);` under `#if defined(ARDUINO_ARCH_STM32)`
+  before constructing `CRSFv3`; PA9/PA10 are USART1, wired to the D1/D0 pins
+  on a Nucleo64 board's Arduino header. Never caught before because the CI
+  matrix builds every `examples/*/` directory in one `set -e` shell loop in
+  alphabetical order, and no example before this one in that order had ever
+  reached the STM32 link step far enough to hit it. Verified for
+  `esp32:esp32:esp32` (the `#if` makes the STM32 branch inert there); local
+  verification for the STM32 target itself was blocked by an unrelated
+  environment issue on the machine this was fixed on (`g++` unable to spawn
+  `cc1plus` as a child process) — the fix is otherwise based on directly
+  reading the installed `STMicroelectronics:stm32` core's variant and
+  `PeripheralPins.c` files, which confirm both the missing `Serial1` and the
+  PA9/PA10 → USART1 mapping.
 - The generated **Examples** wiki page never showed a description for any
   Arduino sketch: `tools/wiki_build.py` only recognises a Doxygen-style
   `/** ... */` file header, and both example `.ino` files used a plain `/*

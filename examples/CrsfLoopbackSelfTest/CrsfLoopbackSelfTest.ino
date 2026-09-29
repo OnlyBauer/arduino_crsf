@@ -25,6 +25,16 @@
 
 #include <CRSFv3.h>
 
+#if defined(ARDUINO_ARCH_STM32)
+/*
+ * Unlike ESP32, RP2040 and SAMD, the STM32 core does not provide a global
+ * Serial1: a HardwareSerial exists only where the sketch declares one. PA9/
+ * PA10 are USART1, wired to the D1/D0 pins on a Nucleo64 board's Arduino
+ * header; adjust for a different board.
+ */
+HardwareSerial Serial1(PA10, PA9);
+#endif
+
 CRSFv3 crsf(Serial1);
 
 static int checks = 0;
