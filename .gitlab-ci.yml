@@ -148,8 +148,15 @@ vendor-unmodified:
 # examples/<Name>/<Name>.ino -- also genau die drei Dinge, die still kaputtgehen
 # und die man sonst erst von einem Benutzer erfaehrt.
 #
-# --library-manager update statt submit: submit verlangt oeffentliches
-# Git-Hosting, und git.bauer.pub ist selbst gehostet.
+# --library-manager false, nicht update oder submit: beide Modi pruefen gegen
+# den zentralen Registry-Eintrag, den es fuer diese Bibliothek nicht gibt --
+# sie ist laut README bewusst nicht dort gelistet. "update" setzt einen
+# *existierenden* Eintrag voraus und schlaegt ohne ihn hart fehl (Regel
+# LP018, "Library name ... not found in the Library Manager index"); das war
+# hier scharfgestellt und ist in CI genau so gescheitert. "submit" waere die
+# richtige Wahl, sobald eine Aufnahme in die Registry tatsaechlich angestrebt
+# wird; bis dahin behauptet false nichts, was nicht zutrifft, und prueft
+# trotzdem alles, was unabhaengig vom Registry-Status gilt.
 arduino-lint:
   stage: lint
   image: debian:bookworm-slim
@@ -158,7 +165,7 @@ arduino-lint:
     - apt-get install -y -qq --no-install-recommends curl ca-certificates
     - curl -fsSL https://raw.githubusercontent.com/arduino/arduino-lint/main/etc/install.sh | BINDIR=/usr/local/bin sh
   script:
-    - arduino-lint --compliance strict --library-manager update --recursive
+    - arduino-lint --compliance strict --library-manager false --recursive
 
 # --- test ---------------------------------------------------------------------
 

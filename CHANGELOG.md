@@ -58,6 +58,17 @@ and against `library.json`, which must agree.
   esp_crsf and never corrected.
 - `build_wiki/` was missing from `.gitignore`, so generated pages were being
   staged. It is ignored in the other three repositories; now here too.
+- The `arduino-lint` job failed CI outright: `--library-manager update` checks
+  the library against its *existing* entry in the central Library Manager
+  index, and this library has never been submitted there — the README says so.
+  Rule LP018 has nothing to compare against and refuses rather than passing,
+  with `Library name CrsfPort not found in the Library Manager index`.
+  `--library-manager false` skips the registry-specific rules instead of
+  asserting a submission status this project has not taken. The comment
+  claiming `submit` needs public git hosting was untested and, on checking,
+  appears to have been wrong: a local run of `--library-manager submit`
+  produced no such complaint. `submit` is the better flag once submission is
+  actually intended.
 
 ## [0.1.0] — 2026-09-28
 
