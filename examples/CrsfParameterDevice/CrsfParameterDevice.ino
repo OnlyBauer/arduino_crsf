@@ -22,15 +22,23 @@
 
 #if defined(ARDUINO_ARCH_STM32)
 /*
- * Unlike ESP32, RP2040 and SAMD, the STM32 core does not provide a global
- * Serial1: a HardwareSerial exists only where the sketch declares one. PA9/
- * PA10 are USART1, wired to the D1/D0 pins on a Nucleo64 board's Arduino
- * header; adjust for a different board.
+ * Serial1 is not usable here. Unlike ESP32, RP2040 and SAMD, the STM32 core
+ * always forward-declares it (Serial.h, whenever USART1 exists) but only
+ * defines it when the board's one "generic Serial" happens to be assigned to
+ * USART1 -- on a Nucleo64 board that slot is USART2 (the ST-Link VCP)
+ * instead, so Serial1 is a name with no object behind it. Uart is the
+ * concrete class Serial1 would have been; PA9/PA10 are USART1, wired to the
+ * D1/D0 pins on a Nucleo64 board's Arduino header -- adjust for a different
+ * board.
  */
-HardwareSerial Serial1(PA10, PA9);
+Uart CrsfSerial(PA10, PA9);
 #endif
 
+#if defined(ARDUINO_ARCH_STM32)
+CRSFv3 crsf(CrsfSerial);
+#else
 CRSFv3 crsf(Serial1);
+#endif
 
 /* --- the parameter tree --------------------------------------------------- */
 

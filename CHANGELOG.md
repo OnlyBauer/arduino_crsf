@@ -60,23 +60,34 @@ and against `library.json`, which must agree.
 
 - The `build-examples` CI job failed for every example on
   `STMicroelectronics:stm32:Nucleo_64:pnum=NUCLEO_F411RE`, including the two
-  that shipped in `0.1.0`:
-  `undefined reference to 'Serial1'`. Unlike ESP32, RP2040 and SAMD, the
-  STM32 core does not provide a global `Serial1` — a `HardwareSerial` exists
-  only where the sketch declares one. All six examples now declare
-  `HardwareSerial Serial1(PA10, PA9);` under `#if defined(ARDUINO_ARCH_STM32)`
-  before constructing `CRSFv3`; PA9/PA10 are USART1, wired to the D1/D0 pins
-  on a Nucleo64 board's Arduino header. Never caught before because the CI
-  matrix builds every `examples/*/` directory in one `set -e` shell loop in
-  alphabetical order, and no example before this one in that order had ever
-  reached the STM32 link step far enough to hit it. Verified for
-  `esp32:esp32:esp32` (the `#if` makes the STM32 branch inert there); local
-  verification for the STM32 target itself was blocked by an unrelated
-  environment issue on the machine this was fixed on (`g++` unable to spawn
-  `cc1plus` as a child process) — the fix is otherwise based on directly
-  reading the installed `STMicroelectronics:stm32` core's variant and
-  `PeripheralPins.c` files, which confirm both the missing `Serial1` and the
-  PA9/PA10 → USART1 mapping.
+  that shipped in `0.1.0`: `undefined reference to 'Serial1'`. Never caught
+  before because the CI matrix builds every `examples/*/` directory in one
+  `set -e` shell loop in alphabetical order, and no example before this one
+  in that order had ever reached the STM32 link step far enough to hit it.
+  The STM32 core's `Serial.h` forward-declares `Serial1` unconditionally
+  whenever `USART1` exists (`extern Uart Serial1;` — `Uart` is the core's
+  concrete `HardwareSerial` subclass), but only *defines* it when the
+  board's one "generic Serial" slot happens to be assigned to USART1; on a
+  Nucleo64 board that slot is USART2 (the ST-Link VCP) instead, so `Serial1`
+  is a declaration with nothing behind it. A first attempt at this fix
+  declared `HardwareSerial Serial1(PA10, PA9);` in each sketch, which
+  replaced one failure with another (`conflicting declaration`) by fighting
+  that forward declaration instead of working around it. All six examples
+  now instead declare their own `Uart CrsfSerial(PA10, PA9);` under
+  `#if defined(ARDUINO_ARCH_STM32)` and construct `CRSFv3` from that instead
+  of `Serial1` on STM32 only; PA9/PA10 are USART1, wired to the D1/D0 pins
+  on a Nucleo64 board's Arduino header. Verified for `esp32:esp32:esp32`
+  (the `#if` makes the STM32 branch inert there) and against the installed
+  core's actual `Serial.h`/`WSerial.h` source, which is where the exact
+  mechanism above was confirmed. Full local compilation for the STM32
+  target itself could not be completed: the toolchain arduino-cli bundles
+  could not be made to spawn its `cc1plus` as a child process on the
+  machine this was fixed on, and manually invoking a second, working
+  `arm-none-eabi-g++` against the same real STM32 core sources got past
+  `Arduino.h`, `wiring.h` and `clock.h` — the actual chain that matters for
+  this fix — before hitting an unrelated path-resolution problem with a
+  vendored CMSIS header, native to that machine's scratch directory rather
+  than to the code.
 - The generated **Examples** wiki page never showed a description for any
   Arduino sketch: `tools/wiki_build.py` only recognises a Doxygen-style
   `/** ... */` file header, and both example `.ino` files used a plain `/*
