@@ -24,11 +24,6 @@ and against `library.json`, which must agree.
   the wiki by hand.
 - A *Related repositories* table in the README.
 
-### Fixed
-
-- `build_wiki/` was missing from `.gitignore`, so generated pages were being
-  staged. It is ignored in the other three repositories; now here too.
-
 ### Changed
 
 - The wiki is no longer published by CI; `tools/wiki-sync.sh --push` publishes it
@@ -50,6 +45,19 @@ and against `library.json`, which must agree.
   in C, where that file is compiled everywhere else. The header filter now
   matches only `CrsfPort.h` and `crsf_arduino_conf.h`.
 - A missing space in the clang-tidy invocation in `tools/ci.sh`.
+- `tools/ci.sh lint` now also covers `tests/test_arduino_port.cpp` and
+  `tests/arduino_stubs/arduino_stubs.cpp`, not only `src/CrsfPort.cpp`.
+  `.clang-tidy` gains three exclusions that only apply to this repository's own
+  C++ test code — `misc-const-correctness` and `misc-use-anonymous-namespace`
+  fire on C idioms (the `CHECK_EQ_*` macros from the shared `test_util.h`, and
+  file-scope `static`, respectively) that every other repository in this
+  project uses identically as plain C; `cert-err58-cpp` fires on a test
+  double's trivial constructor in a project that uses no exceptions anywhere.
+  Also fixes a stale header comment that described this file's static analysis
+  in terms of ESP-IDF and `esp-clang`, left over from being copied from
+  esp_crsf and never corrected.
+- `build_wiki/` was missing from `.gitignore`, so generated pages were being
+  staged. It is ignored in the other three repositories; now here too.
 
 ## [0.1.0] — 2026-09-28
 

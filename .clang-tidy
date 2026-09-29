@@ -1,26 +1,16 @@
-# Statische Analyse für esp_crsf, geprüft von tools/ci.sh lint und der Stufe
-# lint in .gitlab-ci.yml. clang-tidy liegt der ESP-IDF-Installation bereits bei
-# (esp-clang/*/esp-clang/bin), es ist also keine zusätzliche Abhängigkeit.
+# Statische Analyse für CrsfPort, geprüft von tools/ci.sh lint und der Stufe
+# lint in .gitlab-ci.yml.
 #
 # Der Zweck dieses Jobs ist ausdrücklich Regressionsschutz, nicht Fundsuche: auf
 # dem Stand, an dem er eingeführt wurde, melden die aktivierten Prüfungen über
-# alle sechs host-testbaren Module hinweg nichts. Insbesondere schweigen die
-# pfadsensitiven Prüfungen von clang-analyzer vollständig — kein Nullzugriff,
-# kein Überlauf, kein Lesen von Uninitialisiertem. Der Job ist deshalb von
-# Anfang an blockierend und nicht allow_failure: er soll rot werden, sobald der
-# nächste Patch etwas Neues einträgt.
+# den eigenen Code dieser Bibliothek (CrsfPort.cpp/.h, die Tests, die
+# Arduino-Attrappe) nichts. Der Job ist deshalb von Anfang an blockierend und
+# nicht allow_failure: er soll rot werden, sobald der nächste Patch etwas Neues
+# einträgt.
 #
 # WarningsAsErrors steht bewusst auf allem, was Checks überhaupt aktiviert. Ein
 # clang-tidy-Lauf ohne das gibt Exit-Code 0 auch bei Warnungen und wäre in CI
 # stillschweigend nutzlos.
-#
-# ACHTUNG, Datenmodell: maßgeblich ist der lint-Job in CI, nicht der lokale
-# Lauf. ESP-IDFs esp-clang ist ein Cross-Compiler mit Standardziel riscv32
-# (ILP32), dort ist size_t so breit wie int; die Host-Suiten werden LP64
-# gebaut. Prüfungen, die genau davon leben, schlagen lokal nicht an —
-# bugprone-implicit-widening-of-multiplication-result hat so einen Fall in
-# tests/test_tunnel.c erst in CI gemeldet, nachdem die Stufe lokal grün war.
-# tools/ci.sh lint schreibt deshalb hin, welches Modell es analysiert.
 
 Checks: >
   -*,
@@ -42,18 +32,19 @@ Checks: >
   -clang-analyzer-optin.performance.Padding,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -misc-include-cleaner,
-  -misc-no-recursion
+  -misc-no-recursion,
+  -misc-const-correctness,
+  -misc-use-anonymous-namespace,
+  -cert-err58-cpp
 
 WarningsAsErrors: '*'
 
-# Nur eigener Code. Ohne das melden die Systemheader der Toolchain und die
-# ESP-IDF-Attrappen unter tests/idf_stubs/ mit, und letztere bilden absichtlich
-# eine fremde API nach, statt sich an die Regeln dieses Projekts zu halten.
-# Nur die Header dieses Repositories. Der eingebettete Kern ist c_crsf's
-# Code, wird dort geprueft, und zwei clang-Versionen ueber dieselbe Datei
-# erzeugen auf Dauer nur Scheinbefunde. Bei dieser Bibliothek kommt hinzu,
-# dass der Kern hier als C++ uebersetzt wird: misc-const-correctness meldet
-# dann in crsf_codec.h etwas, das in C gar nicht gilt.
+# Nur die Header dieses Repositories. Der eingebettete Kern ist c_crsf's Code,
+# wird dort geprüft, und zwei clang-Versionen über dieselbe Datei erzeugen auf
+# Dauer nur Scheinbefunde. Bei dieser Bibliothek kommt hinzu, dass der Kern
+# hier als C++ übersetzt wird: misc-const-correctness meldet dann in
+# crsf_codec.h etwas, das in C gar nicht gilt — derselbe Grund, aus dem die
+# Prüfung unten für das ganze Repository abgeschaltet ist.
 HeaderFilterRegex: '(CrsfPort|crsf_arduino_conf)\.h$'
 
 # Begründung für jede einzelne Abschaltung oben — ohne diese Liste wüsste beim
@@ -64,40 +55,60 @@ HeaderFilterRegex: '(CrsfPort|crsf_arduino_conf)\.h$'
 #   Meldet jede Funktion mit zwei benachbarten Parametern gleichen Typs. Bei
 #   einer Wire-Protokoll-API ist das der Normalfall und nicht zu vermeiden:
 #   crsf_build_frame(dst, cap, addr, type) hat vier uint8_t hintereinander,
-#   weil das Format vier Bytes hintereinander hat. 9 Treffer, alle unecht.
+#   weil das Format vier Bytes hintereinander hat.
 #
 # bugprone-narrowing-conversions
-#   Einziger Treffer war crsf_codec.c:321, und der ist falsch: der Bedingungs-
-#   operator hebt den int16_t-Rückgabewert von crsf_vspeed_unpack() nach int an,
-#   die Zuweisung schränkt ihn wieder ein, und der Wert ist eine Funktion weiter
-#   oben schon auf den int16-Bereich geklemmt. Die Prüfung kann eine solche
-#   Klemmung nicht sehen und würde bei einem Wire-Protokoll, das ständig zwischen
-#   Breiten wandelt, dauerhaft rauschen.
+#   Bei einem Wire-Protokoll, das ständig zwischen Breiten wandelt, meldet
+#   diese Prüfung dauerhaft Konvertierungen, die durch eine bereits erfolgte
+#   Klemmung längst sicher sind; sie kann eine solche Klemmung nicht sehen.
 #
 # clang-analyzer-optin.performance.Padding
 #   Meldet Strukturen, die durch eine andere Feldreihenfolge kleiner würden.
 #   Bei den Payload-Strukturen ist die Reihenfolge durch das Wire-Format
-#   vorgegeben und darf gerade nicht nach Größe sortiert werden; der einzige
-#   Treffer lag ohnehin in einer testlokalen Tabelle.
+#   vorgegeben und darf gerade nicht nach Größe sortiert werden.
 #
 # cert-err33-c
-#   Verlangt, den Rückgabewert von printf & Co. zu prüfen. In den Testsuiten und
-#   den Beispielen ist das sinnlos.
+#   Verlangt, den Rückgabewert von printf & Co. zu prüfen. In den Testsuiten
+#   und den Beispielen ist das sinnlos.
 #
 # cert-dcl37-c / cert-dcl51-cpp
-#   Reservierte Bezeichner. Schlägt auf die Include-Wächter (CRSF_..._H) an, die
-#   keine sind.
+#   Reservierte Bezeichner. Schlägt auf die Include-Wächter (CRSF_..._H) an,
+#   die keine sind.
 #
 # clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling
 #   Verlangt memcpy_s / memset_s aus C11 Annex K. Die ist optional, und keine
-#   der hier verwendeten libc — newlib auf dem Ziel, glibc auf dem Host —
-#   stellt sie bereit. 40 Treffer, alle nicht umsetzbar.
+#   der hier in Frage kommenden C-Bibliotheken -- newlib, glibc, avr-libc --
+#   stellt sie bereit.
 #
 # misc-include-cleaner
-#   Verlangt, jeden benutzten Namen direkt zu inkludieren. 101 Treffer, im
-#   Wesentlichen die Forderung, in jeder Datei <stdint.h> zu wiederholen, das
-#   schon über crsf_protocol.h kommt. Das würde die bewusst gepflegte
-#   Include-Struktur der Komponente aufweichen, nicht verbessern.
+#   Verlangt, jeden benutzten Namen direkt zu inkludieren. Würde die bewusst
+#   gepflegte Include-Struktur des eingebetteten Kerns aufweichen, nicht
+#   verbessern, und ist ohnehin c_crsf's Entscheidung, nicht diese hier.
 #
 # misc-no-recursion
 #   Es gibt keine Rekursion; die Prüfung ist nur teuer.
+#
+# misc-const-correctness
+#   Der eingebettete Kern ist C und wird in c_crsf als solches geprüft. Hier
+#   läuft er zusätzlich durch einen C++-Compiler, weil CrsfPort.cpp ihn direkt
+#   einbindet, und diese Prüfung meldet dann C-Idiome, die in C gar nicht
+#   gelten -- vor allem die Skalarvariablen, die die CHECK_EQ_*-Makros aus
+#   test_util.h anlegen. test_util.h ist unverändert aus c_crsf übernommen und
+#   wird nicht wegen einer C++-Eigenheit angepasst, die in keinem anderen
+#   Repository dieses Projekts existiert.
+#
+# misc-use-anonymous-namespace
+#   Verlangt anonyme Namensräume statt interner Verknüpfung über `static`.
+#   `static` für Datei-lokale Funktionen und Variablen ist das Idiom, das
+#   jede einzelne Testdatei in jedem der vier Repositories verwendet -- die
+#   übrigen drei sind reines C, wo anonyme Namensräume nicht existieren. Diese
+#   eine C++-Datei stimmig zu den anderen zu halten wiegt schwerer als eine
+#   Cpp-Core-Guidelines-Präferenz ohne Auswirkung auf Verhalten oder
+#   Lesbarkeit.
+
+# cert-err58-cpp
+#   Verlangt, dass der Konstruktor eines Objekts mit statischer Speicherdauer
+#   nicht werfen kann. Betrifft hier ausschließlich Testattrappen wie
+#   MockSerial, deren Konstruktor reset() aufruft -- reine Feldzuweisungen,
+#   keine Allokation. Kein Repository dieses Projekts verwendet oder aktiviert
+#   Ausnahmebehandlung; es ist ein Ziel für Mikrocontroller.

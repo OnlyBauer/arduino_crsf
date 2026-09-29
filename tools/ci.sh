@@ -125,6 +125,12 @@ stage_lint() {
     # Only this library's own source. The vendored core is c_crsf's code,
     # checked in c_crsf's pipeline.
     clang-tidy --quiet src/CrsfPort.cpp -- -std=c++14 -Isrc -Itests/arduino_stubs >/dev/null || rc=1
+    # The mock Arduino runtime and the test that runs against it, not only the
+    # library itself.
+    clang-tidy --quiet tests/arduino_stubs/arduino_stubs.cpp -- -std=c++14 \
+        -Isrc -Itests -Itests/arduino_stubs >/dev/null || rc=1
+    clang-tidy --quiet tests/test_arduino_port.cpp -- -std=c++14 \
+        -Isrc -Itests -Itests/arduino_stubs >/dev/null || rc=1
     [ $rc -eq 0 ] && echo "  clang-tidy is happy"
   else
     skip "clang-tidy" "clang-tidy" || rc=1
