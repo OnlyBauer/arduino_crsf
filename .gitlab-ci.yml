@@ -175,11 +175,17 @@ unit-tests:
   stage: test
   image: gcc:14
   script:
-    - make -C tests
+    - mkdir -p build_tests
+    - make -C tests > build_tests/test-output.txt 2>&1 || true
+    - cat build_tests/test-output.txt
+    - bash tools/junit_from_tests.sh build_tests/test-output.txt > build_tests/junit.xml
+    - grep -q "All .* suites passed" build_tests/test-output.txt
   artifacts:
-    when: on_failure
+    when: always
     paths:
       - build_tests/
+    reports:
+      junit: build_tests/junit.xml
     expire_in: 1 week
 
 # Die Fuzz-Suite prüft Invarianten und Ausgabegrenzen, aber ein Lesezugriff

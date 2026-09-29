@@ -43,6 +43,16 @@ and against `library.json`, which must agree.
 - `tools/wiki_build.py` and `tools/wiki-sync.sh`, for building and publishing
   the wiki by hand.
 - A *Related repositories* table in the README.
+- `tools/junit_from_tests.sh`, so the `unit-tests` job populates GitLab's
+  Tests tab instead of leaving it empty. The suites are deliberately
+  framework-free (`tests/test_util.h`'s `printf`-based `PASS`/`FAIL` lines,
+  not a test framework with structured output), so this converts the
+  existing plain-text summary into one JUnit `<testcase>` per suite rather
+  than teaching every suite anything about JUnit: each suite's own failure
+  detail (the `file:line: ...` lines `CHECK*` already prints) is captured
+  from the lines directly preceding its summary line and attached as that
+  testcase's `<failure>` body. Coarser than one `<testcase>` per assertion,
+  but nothing before this showed up in the Tests tab at all.
 
 ### Changed
 
