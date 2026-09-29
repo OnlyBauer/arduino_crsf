@@ -84,10 +84,10 @@ and against `library.json`, which must agree.
   replaced one failure with another (`conflicting declaration`) by fighting
   that forward declaration instead of working around it. All six examples
   now instead declare their own `Uart CrsfSerial(PA10, PA9);` under
-  `#if defined(ARDUINO_ARCH_STM32)` and construct `CRSFv3` from that instead
+  `\#if defined(ARDUINO_ARCH_STM32)` and construct `CRSFv3` from that instead
   of `Serial1` on STM32 only; PA9/PA10 are USART1, wired to the D1/D0 pins
   on a Nucleo64 board's Arduino header. Verified for `esp32:esp32:esp32`
-  (the `#if` makes the STM32 branch inert there) and against the installed
+  (the `\#if` makes the STM32 branch inert there) and against the installed
   core's actual `Serial.h`/`WSerial.h` source, which is where the exact
   mechanism above was confirmed. Full local compilation for the STM32
   target itself could not be completed: the toolchain arduino-cli bundles
