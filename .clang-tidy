@@ -1,9 +1,9 @@
-# Statische Analyse für CrsfPort, geprüft von tools/ci.sh lint und der Stufe
+# Statische Analyse für CRSFv3, geprüft von tools/ci.sh lint und der Stufe
 # lint in .gitlab-ci.yml.
 #
 # Der Zweck dieses Jobs ist ausdrücklich Regressionsschutz, nicht Fundsuche: auf
 # dem Stand, an dem er eingeführt wurde, melden die aktivierten Prüfungen über
-# den eigenen Code dieser Bibliothek (CrsfPort.cpp/.h, die Tests, die
+# den eigenen Code dieser Bibliothek (CRSFv3.cpp/.h, die Tests, die
 # Arduino-Attrappe) nichts. Der Job ist deshalb von Anfang an blockierend und
 # nicht allow_failure: er soll rot werden, sobald der nächste Patch etwas Neues
 # einträgt.
@@ -45,7 +45,7 @@ WarningsAsErrors: '*'
 # hier als C++ übersetzt wird: misc-const-correctness meldet dann in
 # crsf_codec.h etwas, das in C gar nicht gilt — derselbe Grund, aus dem die
 # Prüfung unten für das ganze Repository abgeschaltet ist.
-HeaderFilterRegex: '(CrsfPort|crsf_arduino_conf)\.h$'
+HeaderFilterRegex: '(CRSFv3|crsf_arduino_conf)\.h$'
 
 # Begründung für jede einzelne Abschaltung oben — ohne diese Liste wüsste beim
 # nächsten Mal niemand mehr, ob eine Prüfung aus gutem Grund oder aus Bequem-
@@ -90,7 +90,7 @@ HeaderFilterRegex: '(CrsfPort|crsf_arduino_conf)\.h$'
 #
 # misc-const-correctness
 #   Der eingebettete Kern ist C und wird in c_crsf als solches geprüft. Hier
-#   läuft er zusätzlich durch einen C++-Compiler, weil CrsfPort.cpp ihn direkt
+#   läuft er zusätzlich durch einen C++-Compiler, weil CRSFv3.cpp ihn direkt
 #   einbindet, und diese Prüfung meldet dann C-Idiome, die in C gar nicht
 #   gelten -- vor allem die Skalarvariablen, die die CHECK_EQ_*-Makros aus
 #   test_util.h anlegen. test_util.h ist unverändert aus c_crsf übernommen und

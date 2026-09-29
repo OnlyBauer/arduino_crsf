@@ -1,6 +1,6 @@
 # Host-side tests for the Arduino wrapper.
 #
-# The code under test is the real, shipping src/CrsfPort.cpp. What is replaced
+# The code under test is the real, shipping src/CRSFv3.cpp. What is replaced
 # is Arduino.h, by arduino_stubs/ -- so Stream, HardwareSerial and micros() are
 # things a test controls.
 #
@@ -31,7 +31,7 @@ CORE_SRCS := crsf_core.c crsf_crc.c crsf_parser.c crsf_codec.c crsf_tunnel.c \
              crsf_params.c crsf_router.c
 CORE_OBJS := $(addprefix $(BUILD)/,$(CORE_SRCS:.c=.o))
 
-CXX_SRCS  := ../src/CrsfPort.cpp arduino_stubs/arduino_stubs.cpp
+CXX_SRCS  := ../src/CRSFv3.cpp arduino_stubs/arduino_stubs.cpp
 SUITES    := test_arduino_port
 
 .PHONY: all run sanitize clean

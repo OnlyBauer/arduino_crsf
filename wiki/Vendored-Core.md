@@ -5,7 +5,7 @@ The `crsf_*.c` and `crsf_*.h` files in `src/` are a verbatim copy of
 is built on. They are not a submodule and not a fetched dependency. They are a copy, pinned
 to a tag, and checked on every pipeline.
 
-They sit **flat** in `src/`, mixed in with `CrsfPort.cpp` and
+They sit **flat** in `src/`, mixed in with `CRSFv3.cpp` and
 `crsf_arduino_conf.h`, and that is forced rather than chosen: the Arduino 1.5
 library format compiles `src/` recursively but puts only `src/` *itself* on the
 include path. A core under `src/c_crsf/` would therefore need every one of its
@@ -56,7 +56,7 @@ CRSF_CORE_TREE=<git tree hash of vendor/c_crsf>
 
 `CRSF_CORE_TREE` is what `--check` compares. In the other ports it is a git tree
 hash of the vendored directory; here it cannot be, because the directory also
-holds `CrsfPort.cpp` and a tree hash would report every edit to it as vendor
+holds `CRSFv3.cpp` and a tree hash would report every edit to it as vendor
 drift. So it is a hash over the git **index entries** of the vendored files
 specifically.
 

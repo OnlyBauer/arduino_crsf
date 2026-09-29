@@ -1,12 +1,12 @@
-# CrsfPort — CRSFv3 for Arduino
+# CRSFv3
 
 A complete implementation of the [TBS CRSFv3 specification](https://github.com/tbs-fpv/tbs-crsf-spec),
 as an Arduino library, usable as either end of a Crossfire link.
 
 ```cpp
-#include <CrsfPort.h>
+#include <CRSFv3.h>
 
-CrsfPort crsf(Serial1);
+CRSFv3 crsf(Serial1);
 
 void setup() { crsf.begin(416666, CRSF_ROLE_RX); }
 
@@ -98,18 +98,18 @@ sketch calls the API from that same `loop()`.
 
 If that stops being true — a second FreeRTOS task on an ESP32, or telemetry
 published from an interrupt — fill in `ops_.lock` and `ops_.unlock` in
-`CrsfPort::begin()`. Leaving them empty in that case is silently wrong rather
+`CRSFv3::begin()`. Leaving them empty in that case is silently wrong rather
 than loudly wrong, which is why it is said here and in the source rather than
 left to be discovered.
 
 ## Installing
 
 Not in the Library Manager index. Clone or download it into your `libraries`
-folder, with the folder named **`CrsfPort`**:
+folder, with the folder named **`CRSFv3`**:
 
 ```sh
 cd ~/Documents/Arduino/libraries
-git clone https://git.bauer.pub/Bauer/arduino_crsf.git CrsfPort
+git clone https://git.bauer.pub/Bauer/arduino_crsf.git CRSFv3
 ```
 
 For PlatformIO, add the repository to `lib_deps`.
@@ -149,7 +149,8 @@ port's *Vendored core* page for why.
 | [**c_crsf**](https://git.bauer.pub/Bauer/c_crsf) | the protocol, with no platform attached | C11 + libm |
 | [**esp_crsf**](https://git.bauer.pub/Bauer/esp_crsf) | ESP-IDF component | verified on ESP32 and ESP32-C3 |
 | [**stm_crsf**](https://git.bauer.pub/Bauer/stm_crsf) | STM32Cube HAL, DMA | **not yet hardware-verified** |
-| [**arduino_crsf**](https://git.bauer.pub/Bauer/arduino_crsf) | Arduino library, class `CrsfPort` | *you are here* |
+| [**arduino_crsf**](https://git.bauer.pub/Bauer/arduino_crsf) | Arduino library, class `CRSFv3` | *you are here* |
+
 ## Licence
 
 [Apache-2.0](LICENSE). The vendored core files in `src/` are a verbatim copy of

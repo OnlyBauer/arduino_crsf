@@ -17,6 +17,18 @@ and against `library.json`, which must agree.
 
 ## [Unreleased]
 
+### Changed
+
+- **Renamed the library and the class from `CrsfPort` to `CRSFv3`**, including
+  `src/CrsfPort.h`/`.cpp` → `src/CRSFv3.h`/`.cpp`, `library.properties`,
+  `library.json`, `keywords.txt`, the examples, the wiki and this README. `0.1.0`
+  called the library `CrsfPort` because "port" was the term shared with
+  `crsf_port_t` in the core and `crsf_stm32_port()` in the STM32 port; `CRSFv3`
+  instead matches the branding already used across the other three repositories
+  ("esp_crsf — CRSFv3 for ESP-IDF", "stm_crsf — CRSFv3 for STM32"), at the cost of
+  that one shared word. This is a breaking change against the tagged `0.1.0`
+  release: a sketch must change both its `#include` and its class name.
+
 ### Added
 
 - A wiki: **Getting started**, **Hardware status** and **Vendored core**.

@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 /**
  * @file Arduino.h
- * @brief Enough of the Arduino runtime to compile and drive CrsfPort on a host.
+ * @brief Enough of the Arduino runtime to compile and drive CRSFv3 on a host.
  *
- * **The code under test is the real, shipping `src/CrsfPort.cpp`** — nothing is
+ * **The code under test is the real, shipping `src/CRSFv3.cpp`** — nothing is
  * reimplemented, and no `#ifdef` was added to it to accommodate this.
  *
  * What carries real behaviour:

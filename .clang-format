@@ -49,7 +49,7 @@ SortIncludes: Never
 # umgestellt werden kann.
 #
 # Mit None wird aus jedem der rund fuenfzehn trivialen Accessoren in
-# CrsfPort.h ein Vierzeiler. Das ist fuer C richtig, wo es keine gibt, und
+# CRSFv3.h ein Vierzeiler. Das ist fuer C richtig, wo es keine gibt, und
 # macht ausgerechnet die Datei unleserlich, die das Aushaengeschild der
 # Bibliothek ist. Inline laesst nur *in* einer Klasse definierte Kurzmethoden
 # auf einer Zeile; freistehende Funktionen bleiben aufgeklappt wie ueberall.

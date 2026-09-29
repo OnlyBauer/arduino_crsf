@@ -85,7 +85,7 @@ vendored_files() {
 # Hashing the *index* entries of the vendored files is as CRLF-proof as a tree
 # hash -- git stores them normalised, so core.autocrlf on a Windows working copy
 # cannot upset it -- and it covers exactly the right set, where a tree hash over
-# src/ would report every edit to CrsfPort.cpp as vendor drift.
+# src/ would report every edit to CRSFv3.cpp as vendor drift.
 vendored_hash() {
   # The paths are all crsf_*.c and crsf_*.h, so word splitting is safe here.
   # shellcheck disable=SC2046

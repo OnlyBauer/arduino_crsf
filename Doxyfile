@@ -1,4 +1,4 @@
-# Doxygen configuration for the CrsfPort Arduino library.
+# Doxygen configuration for the CRSFv3 Arduino library.
 #
 #   doxygen            generate docs into docs/html
 #
@@ -9,7 +9,7 @@
 # argument the function does not have, which is the failure mode that lets
 # documentation drift away from code unnoticed.
 
-PROJECT_NAME           = "CrsfPort"
+PROJECT_NAME           = "CRSFv3"
 PROJECT_BRIEF          = "TBS CRSFv3 for Arduino"
 PROJECT_NUMBER         = 0.1.0
 OUTPUT_DIRECTORY       = docs

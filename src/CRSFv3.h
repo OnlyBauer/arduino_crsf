@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 /**
- * @file CrsfPort.h
+ * @file CRSFv3.h
  * @brief CRSFv3 for Arduino.
  *
  * A thin C++ shell over a `Stream`. The protocol underneath is
@@ -8,9 +8,9 @@
  * STM32 ports run, vendored flat into `src/`.
  *
  * @code
- * #include <CrsfPort.h>
+ * #include <CRSFv3.h>
  *
- * CrsfPort crsf(Serial1);
+ * CRSFv3 crsf(Serial1);
  *
  * void setup() {
  *     crsf.begin(416666, CRSF_ROLE_RX);
@@ -50,8 +50,8 @@
  * with an `#error` rather than an incomprehensible link failure.
  */
 
-#ifndef CRSF_PORT_H
-#define CRSF_PORT_H
+#ifndef CRSFV3_H
+#define CRSFV3_H
 
 #include "crsf_arduino_conf.h"
 
@@ -67,7 +67,7 @@ extern "C" {
  * Allocates nothing: the protocol state is a member, so the object can be a
  * global exactly as an Arduino sketch expects.
  */
-class CrsfPort
+class CRSFv3
 {
 public:
     /**
@@ -79,13 +79,13 @@ public:
      *
      * @param io The stream; must outlive this object.
      */
-    explicit CrsfPort(Stream &io) : io_(&io), uart_(nullptr) {}
+    explicit CRSFv3(Stream &io) : io_(&io), uart_(nullptr) {}
 
     /**
      * @brief Bind to a hardware serial, which this class will open.
      * @param uart The UART; must outlive this object.
      */
-    explicit CrsfPort(HardwareSerial &uart) : io_(&uart), uart_(&uart) {}
+    explicit CRSFv3(HardwareSerial &uart) : io_(&uart), uart_(&uart) {}
 
     /**
      * @brief Open the port.
@@ -251,4 +251,4 @@ private:
     bool open_ = false;    /**< whether begin() succeeded */
 };
 
-#endif /* CRSF_PORT_H */
+#endif /* CRSFV3_H */

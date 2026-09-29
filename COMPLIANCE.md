@@ -28,7 +28,7 @@ Status vocabulary is c_crsf's, unchanged:
 | Clock widening across the `micros()` wrap | Full | `micros()` wraps every 71.6 minutes; a flight exceeds that often enough to matter. Tested across the boundary. |
 | Clock never returns zero | Full | Zero is the protocol layer's "never happened" sentinel, and `micros()` reads 0 for the first microsecond after reset |
 | Baudrate negotiation timing | **Partial, by construction** | A `Stream` has no "transmission complete", so `crsf_port_after_tx()` is called once per `loop()` rather than when a frame has physically left. A negotiated rate therefore takes effect one `loop()` late. That is within the negotiation's timing and is the best a `Stream` can offer. |
-| Thread safety | **Partial, by decision** | No lock. A sketch is single-threaded and paying for one would be waste. Where that stops being true — a second task on an ESP32, telemetry from an interrupt — the lock hooks must be filled in. Called out in `CrsfPort.cpp`, `CrsfPort.h` and the README rather than left implicit. |
+| Thread safety | **Partial, by decision** | No lock. A sketch is single-threaded and paying for one would be waste. Where that stops being true — a second task on an ESP32, telemetry from an interrupt — the lock hooks must be filled in. Called out in `CRSFv3.cpp`, `CRSFv3.h` and the README rather than left implicit. |
 | AVR | **Not supported** | 3552 bytes of RAM against an ATmega328P's 2048. Refused with an `#error` rather than an incomprehensible link failure. See the README for the arithmetic. |
 
 ## P2. Vendored core

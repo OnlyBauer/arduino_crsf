@@ -1,7 +1,7 @@
 # What tools/wiki_build.py needs to know about this repository.
 # The script is identical in all four; everything that differs is here.
 
-title = "CrsfPort"
+title = "CRSFv3"
 
 [pages]
 "README.md" = "Home"
@@ -22,9 +22,9 @@ order = [
 
 [examples]
 glob = "examples/*/*.ino"
-intro = "Open any of these from the IDE's File > Examples > CrsfPort menu, or:"
+intro = "Open any of these from the IDE's File > Examples > CRSFv3 menu, or:"
 build = "arduino-cli compile --fqbn esp32:esp32:esp32 --library . examples/<Name>/<Name>.ino"
 
 [api]
-modules = ["src/CrsfPort.h", "src/crsf_arduino_conf.h", "src/crsf_*.h", "src/crsf_*.c"]
-note = "`CrsfPort.h` is the Arduino wrapper. Every `crsf_*` file beside it is the shared protocol core, vendored flat because the Arduino library format only puts `src/` itself on the include path."
+modules = ["src/CRSFv3.h", "src/crsf_arduino_conf.h", "src/crsf_*.h", "src/crsf_*.c"]
+note = "`CRSFv3.h` is the Arduino wrapper. Every `crsf_*` file beside it is the shared protocol core, vendored flat because the Arduino library format only puts `src/` itself on the include path."

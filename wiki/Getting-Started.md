@@ -8,11 +8,11 @@
 ## Installing
 
 It is not in the Library Manager index. Clone or download it into your
-`libraries` folder, with the folder named **`CrsfPort`**:
+`libraries` folder, with the folder named **`CRSFv3`**:
 
 ```sh
 cd ~/Documents/Arduino/libraries
-git clone https://git.bauer.pub/Bauer/arduino_crsf.git CrsfPort
+git clone https://git.bauer.pub/Bauer/arduino_crsf.git CRSFv3
 ```
 
 The folder name matters: the IDE matches it against `name=` in
@@ -42,9 +42,9 @@ compiled it, and the list means "CI compiles this", not "this ought to be fine".
 ## A first sketch
 
 ```cpp
-#include <CrsfPort.h>
+#include <CRSFv3.h>
 
-CrsfPort crsf(Serial1);
+CRSFv3 crsf(Serial1);
 
 void setup() {
     Serial.begin(115200);              // the console
@@ -102,7 +102,7 @@ Avoid `delay()` entirely if you can; the example uses a `millis()` comparison.
 
 ## The whole API, not just the methods
 
-The fifteen or so methods on `CrsfPort` cover what a short sketch does. For
+The fifteen or so methods on `CRSFv3` cover what a short sketch does. For
 anything else — the parameter protocol, the MAVLink and MSP tunnels, `0x32`
 Direct Commands, routing, and every one of the ~120 `crsf_send_*` and
 `crsf_publish_*` functions — use the C API directly. The implicit conversion
@@ -126,7 +126,7 @@ code calls the API from that same `loop()`.
 
 If that stops being true — a second FreeRTOS task on an ESP32, or telemetry
 published from an interrupt — fill in `ops_.lock` and `ops_.unlock` in
-`CrsfPort::begin()`. Leaving them empty in that case is silently wrong rather
+`CRSFv3::begin()`. Leaving them empty in that case is silently wrong rather
 than loudly wrong, which is why it is said here and in the source.
 
 ## Proving it on your board

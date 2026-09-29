@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 /**
- * @file CrsfPort.cpp
- * @brief The Arduino port. See CrsfPort.h.
+ * @file CRSFv3.cpp
+ * @brief The Arduino port. See CRSFv3.h.
  *
  * There is very little here, which is the point. A `Stream` already is a byte
  * sink and a byte source, and `micros()` is a clock, so the hooks the protocol
@@ -10,11 +10,11 @@
  * ports run.
  */
 
-#include "CrsfPort.h"
+#include "CRSFv3.h"
 
-bool CrsfPort::txPush(void *ctx, const uint8_t *frame, size_t len)
+bool CRSFv3::txPush(void *ctx, const uint8_t *frame, size_t len)
 {
-    CrsfPort *self = static_cast<CrsfPort *>(ctx);
+    CRSFv3 *self = static_cast<CRSFv3 *>(ctx);
 
     /*
      * Refuse rather than block where the API allows it to be asked.
@@ -35,7 +35,7 @@ bool CrsfPort::txPush(void *ctx, const uint8_t *frame, size_t len)
     return self->io_->write(frame, len) == len;
 }
 
-int64_t CrsfPort::nowUs(void *ctx)
+int64_t CRSFv3::nowUs(void *ctx)
 {
     (void)ctx;
 
@@ -50,7 +50,7 @@ int64_t CrsfPort::nowUs(void *ctx)
      * reset, and a port that hands that over makes the scheduler re-emit on
      * every call until the counter moves.
      *
-     * Static, and therefore shared by every CrsfPort in the sketch. That is
+     * Static, and therefore shared by every CRSFv3 in the sketch. That is
      * correct: they are all reading the same machine clock.
      */
     static uint32_t last = 0;
@@ -66,7 +66,7 @@ int64_t CrsfPort::nowUs(void *ctx)
     return t > 0 ? t : 1;
 }
 
-bool CrsfPort::begin(uint32_t baud, crsf_role_t role)
+bool CRSFv3::begin(uint32_t baud, crsf_role_t role)
 {
     crsf_port_config_t cfg = {};
     cfg.role = role;
@@ -77,7 +77,7 @@ bool CrsfPort::begin(uint32_t baud, crsf_role_t role)
     return begin(cfg);
 }
 
-bool CrsfPort::begin(const crsf_port_config_t &cfg)
+bool CRSFv3::begin(const crsf_port_config_t &cfg)
 {
     if (open_) {
         end();
@@ -89,8 +89,8 @@ bool CrsfPort::begin(const crsf_port_config_t &cfg)
     }
 
     ops_ = {};
-    ops_.tx_push = &CrsfPort::txPush;
-    ops_.now_us = &CrsfPort::nowUs;
+    ops_.tx_push = &CRSFv3::txPush;
+    ops_.now_us = &CRSFv3::nowUs;
     /*
      * No lock, deliberately. A sketch is single-threaded: loop() feeds the port
      * and the sketch calls the API from that same loop(). Where that stops being
@@ -106,7 +106,7 @@ bool CrsfPort::begin(const crsf_port_config_t &cfg)
     return open_;
 }
 
-void CrsfPort::end()
+void CRSFv3::end()
 {
     if (!open_) {
         return;
@@ -116,7 +116,7 @@ void CrsfPort::end()
     open_ = false;
 }
 
-void CrsfPort::loop()
+void CRSFv3::loop()
 {
     if (!open_) {
         return;
@@ -150,7 +150,7 @@ void CrsfPort::loop()
     crsf_port_tick(&port_);
 }
 
-uint16_t CrsfPort::channel(uint8_t i)
+uint16_t CRSFv3::channel(uint8_t i)
 {
     crsf_channels_t ch;
     if (i >= CRSF_NUM_CHANNELS ||
@@ -160,7 +160,7 @@ uint16_t CrsfPort::channel(uint8_t i)
     return ch.channel[i];
 }
 
-uint16_t CrsfPort::channelUs(uint8_t i)
+uint16_t CRSFv3::channelUs(uint8_t i)
 {
     /* 172..1811 ticks map to about 988..2012 us; the usual linear conversion. */
     const int32_t raw = channel(i);

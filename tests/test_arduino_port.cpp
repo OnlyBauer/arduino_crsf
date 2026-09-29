@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 /**
  * @file test_arduino_port.cpp
- * @brief CrsfPort, driven on a host against a mock Arduino runtime.
+ * @brief CRSFv3, driven on a host against a mock Arduino runtime.
  *
- * The code under test is the real, shipping `src/CrsfPort.cpp`. What is faked is
+ * The code under test is the real, shipping `src/CRSFv3.cpp`. What is faked is
  * `Stream`, `HardwareSerial` and `micros()`.
  *
  * Read `arduino_stubs/Arduino.h` before trusting a pass: there is no board here.
@@ -16,7 +16,7 @@ extern "C" {
 #include "test_util.h"
 }
 
-#include "CrsfPort.h"
+#include "CRSFv3.h"
 #include "Arduino.h"
 
 #include <string.h>
@@ -25,7 +25,7 @@ extern "C" {
 static MockSerial g_serial;
 
 /** @brief Open a port on the mock stream. @param p Storage. @return true on success. */
-static bool open_port(CrsfPort &p)
+static bool open_port(CRSFv3 &p)
 {
     g_serial.reset();
     mock_set_micros(1000);
@@ -70,7 +70,7 @@ static void on_frame(crsf_handle_t h, const crsf_frame_t *frame, void *ctx)
 /** @brief A port opens on a HardwareSerial and opens the serial too. */
 static void test_begin_opens_serial(void)
 {
-    CrsfPort crsf(g_serial);
+    CRSFv3 crsf(g_serial);
     CHECK(open_port(crsf), "the port opens");
     CHECK_EQ_INT(g_serial.baud(), 416666, "and opened the serial at the right rate");
     CHECK(crsf.port() != NULL, "the protocol port is reachable");
@@ -81,7 +81,7 @@ static void test_begin_opens_serial(void)
 /** @brief Bytes on the stream reach the protocol layer when loop() runs. */
 static void test_receive(void)
 {
-    CrsfPort crsf(g_serial);
+    CRSFv3 crsf(g_serial);
     CHECK(open_port(crsf), "the port opens");
 
     Rec rec = {0, 0};
@@ -101,7 +101,7 @@ static void test_receive(void)
 /** @brief A frame arriving in pieces is still assembled. */
 static void test_receive_in_pieces(void)
 {
-    CrsfPort crsf(g_serial);
+    CRSFv3 crsf(g_serial);
     CHECK(open_port(crsf), "the port opens");
 
     Rec rec = {0, 0};
@@ -121,7 +121,7 @@ static void test_receive_in_pieces(void)
 /** @brief A sent frame reaches the stream. */
 static void test_transmit(void)
 {
-    CrsfPort crsf(g_serial);
+    CRSFv3 crsf(g_serial);
     CHECK(open_port(crsf), "the port opens");
 
     crsf_attitude_t att;
@@ -154,7 +154,7 @@ static void test_transmit(void)
  */
 static void test_transmit_refuses_when_full(void)
 {
-    CrsfPort crsf(g_serial);
+    CRSFv3 crsf(g_serial);
     CHECK(open_port(crsf), "the port opens");
 
     g_serial.set_room(4); /* less than a frame */
@@ -173,7 +173,7 @@ static void test_transmit_refuses_when_full(void)
 /** @brief The scheduler paces telemetry, and the clock drives it. */
 static void test_scheduler(void)
 {
-    CrsfPort crsf(g_serial);
+    CRSFv3 crsf(g_serial);
     CHECK(open_port(crsf), "the port opens");
 
     crsf_battery_t bat;
@@ -207,7 +207,7 @@ static void test_scheduler(void)
  */
 static void test_clock_wrap(void)
 {
-    CrsfPort crsf(g_serial);
+    CRSFv3 crsf(g_serial);
     g_serial.reset();
     mock_set_micros(0xFFFFFF00u);
     CHECK(crsf.begin(416666, CRSF_ROLE_RX), "the port opens near the wrap");
@@ -247,7 +247,7 @@ static void test_clock_wrap(void)
  */
 static void test_channel_defaults_to_midpoint(void)
 {
-    CrsfPort crsf(g_serial);
+    CRSFv3 crsf(g_serial);
     CHECK(open_port(crsf), "the port opens");
 
     CHECK(!crsf.linkUp(), "the link is not up before anything arrives");
@@ -280,7 +280,7 @@ static void test_plain_stream(void)
     g_serial.reset();
     mock_set_micros(1000);
     Stream &as_stream = g_serial;
-    CrsfPort crsf(as_stream);
+    CRSFv3 crsf(as_stream);
 
     CHECK(crsf.begin(416666, CRSF_ROLE_RX), "a Stream-backed port opens");
     CHECK_EQ_INT(g_serial.baud(), 0,

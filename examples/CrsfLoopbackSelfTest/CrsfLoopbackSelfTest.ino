@@ -24,9 +24,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <CrsfPort.h>
+#include <CRSFv3.h>
 
-CrsfPort crsf(Serial1);
+CRSFv3 crsf(Serial1);
 
 static int checks = 0;
 static int failures = 0;
@@ -85,7 +85,7 @@ void setup()
     Serial.begin(115200);
     while (!Serial) {
     }
-    Serial.println(F("\nCrsfPort loopback self-test"));
+    Serial.println(F("\nCRSFv3 loopback self-test"));
     Serial.println(F("jumper Serial1 TX to Serial1 RX before running this\n"));
 
     if (!crsf.begin(416666, CRSF_ROLE_RX)) {

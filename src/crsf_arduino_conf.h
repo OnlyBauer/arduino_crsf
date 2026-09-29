@@ -28,7 +28,7 @@
  * It will not fit.
  */
 #if defined(__AVR__) && !defined(CRSF_ALLOW_AVR)
-#error "CrsfPort needs about 3.5 KB of RAM; an ATmega328P has 2 KB. AVR boards are not supported -- see README.md, Architecture support. Use an ESP32, STM32, RP2040 or SAMD board. Define CRSF_ALLOW_AVR to attempt it anyway."
+#error "CRSFv3 needs about 3.5 KB of RAM; an ATmega328P has 2 KB. AVR boards are not supported -- see README.md, Architecture support. Use an ESP32, STM32, RP2040 or SAMD board. Define CRSF_ALLOW_AVR to attempt it anyway."
 #endif
 
 /**

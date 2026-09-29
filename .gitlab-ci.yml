@@ -1,4 +1,4 @@
-# CI für die Arduino-Bibliothek CrsfPort.
+# CI für die Arduino-Bibliothek CRSFv3.
 #
 # Vier Stufen, von schnell nach langsam:
 #
@@ -337,7 +337,7 @@ release:
     - cat release_notes.md
   release:
     tag_name: $CI_COMMIT_TAG
-    name: "CrsfPort ${CI_COMMIT_TAG#release_}"
+    name: "CRSFv3 ${CI_COMMIT_TAG#release_}"
     description: ./release_notes.md
     ref: $CI_COMMIT_SHA
     assets:

@@ -1,12 +1,12 @@
 #######################################
-# Syntax colouring for CrsfPort
+# Syntax colouring for CRSFv3
 #
 # Fields are separated by a literal TAB, not spaces. The IDE's parser splits on
 # tab and silently ignores any line that uses spaces, so a tidied version of
 # this file looks perfectly fine and highlights nothing.
 #######################################
 
-CrsfPort	KEYWORD1
+CRSFv3	KEYWORD1
 crsf_handle_t	KEYWORD1
 crsf_channels_t	KEYWORD1
 crsf_battery_t	KEYWORD1

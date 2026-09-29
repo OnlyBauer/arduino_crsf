@@ -19,9 +19,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <CrsfPort.h>
+#include <CRSFv3.h>
 
-CrsfPort crsf(Serial1);
+CRSFv3 crsf(Serial1);
 
 void setup()
 {
