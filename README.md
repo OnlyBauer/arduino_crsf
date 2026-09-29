@@ -114,6 +114,18 @@ git clone https://git.bauer.pub/Bauer/arduino_crsf.git CrsfPort
 
 For PlatformIO, add the repository to `lib_deps`.
 
+## Documentation
+
+Generated from this repository by `tools/wiki_build.py` and published with
+`tools/wiki-sync.sh --push`:
+
+| | |
+| --- | --- |
+| [**Getting started**](https://git.bauer.pub/Bauer/arduino_crsf/-/wikis/Getting-Started) | installing, board support, and the failsafe rule you should not skip |
+| [**Hardware status**](https://git.bauer.pub/Bauer/arduino_crsf/-/wikis/Hardware-Status) | what is and is not established, and what a board and a jumper wire would settle |
+| [**Vendored core**](https://git.bauer.pub/Bauer/arduino_crsf/-/wikis/Vendored-Core) | what the `crsf_*` files in `src/` are, and why they are flat |
+| [**API reference**](https://git.bauer.pub/Bauer/arduino_crsf/-/wikis/API-Reference) | the generated per-function reference |
+
 ## Testing
 
 ```sh

@@ -124,7 +124,7 @@ stage_lint() {
   if have clang-tidy; then
     # Only this library's own source. The vendored core is c_crsf's code,
     # checked in c_crsf's pipeline.
-    clang-tidy --quiet src/CrsfPort.cpp -- -std=c++14 -Isrc -Itests/arduino_stubs>/dev/null || rc=1
+    clang-tidy --quiet src/CrsfPort.cpp -- -std=c++14 -Isrc -Itests/arduino_stubs >/dev/null || rc=1
     [ $rc -eq 0 ] && echo "  clang-tidy is happy"
   else
     skip "clang-tidy" "clang-tidy" || rc=1

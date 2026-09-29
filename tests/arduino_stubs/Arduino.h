@@ -39,7 +39,8 @@ void mock_set_micros(uint32_t us);
 void mock_advance_micros(uint32_t us);
 
 /** @brief A byte stream, as Arduino defines one. */
-class Stream {
+class Stream
+{
 public:
     virtual ~Stream() {}
 
@@ -76,7 +77,8 @@ public:
 #define MOCK_STREAM_CAP 8192
 
 /** @brief A stream backed by two byte queues a test can reach. */
-class MockSerial : public Stream {
+class MockSerial : public Stream
+{
 public:
     MockSerial() { reset(); }
 

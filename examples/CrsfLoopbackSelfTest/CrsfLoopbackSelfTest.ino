@@ -97,22 +97,31 @@ void setup()
     uint8_t pl[CRSF_MAX_PAYLOAD_SIZE];
 
     crsf_battery_t bat = {};
-    bat.voltage = 168; bat.current = 425; bat.capacity_used = 1350; bat.remaining = 72;
+    bat.voltage = 168;
+    bat.current = 425;
+    bat.capacity_used = 1350;
+    bat.remaining = 72;
     size_t n = crsf_encode_battery(pl, &bat);
     gotAny = false;
     crsf_send_battery(crsf, &bat);
     roundtrip(CRSF_TYPE_BATTERY, pl, n, "0x08 Battery");
 
     crsf_attitude_t att = {};
-    att.pitch = 1234; att.roll = -4321; att.yaw = 15000;
+    att.pitch = 1234;
+    att.roll = -4321;
+    att.yaw = 15000;
     n = crsf_encode_attitude(pl, &att);
     gotAny = false;
     crsf_send_attitude(crsf, &att);
     roundtrip(CRSF_TYPE_ATTITUDE, pl, n, "0x1E Attitude");
 
     crsf_gps_t gps = {};
-    gps.latitude = 521234567; gps.longitude = 133456789;
-    gps.groundspeed = 1234; gps.heading = 18000; gps.altitude = 1250; gps.satellites = 11;
+    gps.latitude = 521234567;
+    gps.longitude = 133456789;
+    gps.groundspeed = 1234;
+    gps.heading = 18000;
+    gps.altitude = 1250;
+    gps.satellites = 11;
     n = crsf_encode_gps(pl, &gps);
     gotAny = false;
     crsf_send_gps(crsf, &gps);

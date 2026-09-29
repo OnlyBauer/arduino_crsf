@@ -40,7 +40,23 @@ SortIncludes: Never
 
 # Auch ein einzeiliger Rumpf gehört bei einer Funktion auf eigene Zeilen; die
 # kurze Form `if (!r) { return false; }` bei Wächtern bleibt dagegen erlaubt.
-AllowShortFunctionsOnASingleLine: None
+# Abweichung von den drei Schwesterprojekten, und die einzige.
+#
+# clang-format kennt kein eigenes "C": .c und .cpp werden beide als Cpp
+# formatiert, eine sprachabhaengige Sektion gibt es also nicht. Der eigene
+# Code dieses Repositories ist vollstaendig C++ -- der eingebettete Kern wird
+# ohnehin nicht geprueft -- weshalb die Einstellung hier ohne Nebenwirkung
+# umgestellt werden kann.
+#
+# Mit None wird aus jedem der rund fuenfzehn trivialen Accessoren in
+# CrsfPort.h ein Vierzeiler. Das ist fuer C richtig, wo es keine gibt, und
+# macht ausgerechnet die Datei unleserlich, die das Aushaengeschild der
+# Bibliothek ist. Inline laesst nur *in* einer Klasse definierte Kurzmethoden
+# auf einer Zeile; freistehende Funktionen bleiben aufgeklappt wie ueberall.
+AllowShortFunctionsOnASingleLine: Inline
+
+# public:/private: auf der Ebene der Klasse statt zwei Spalten eingerueckt.
+AccessModifierOffset: -4
 AllowShortBlocksOnASingleLine: Always
 AllowShortIfStatementsOnASingleLine: WithoutElse
 AllowShortLoopsOnASingleLine: false

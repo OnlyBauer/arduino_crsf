@@ -20,13 +20,36 @@ and against `library.json`, which must agree.
 ### Added
 
 - A wiki: **Getting started**, **Hardware status** and **Vendored core**.
-- `tools/wiki_build.py` and the sync scripts, with a `wiki` CI job.
+- `tools/wiki_build.py` and `tools/wiki-sync.sh`, for building and publishing
+  the wiki by hand.
 - A *Related repositories* table in the README.
 
 ### Fixed
 
 - `build_wiki/` was missing from `.gitignore`, so generated pages were being
   staged. It is ignored in the other three repositories; now here too.
+
+### Changed
+
+- The wiki is no longer published by CI; `tools/wiki-sync.sh --push` publishes it
+  by hand.
+- `.clang-format` sets `AllowShortFunctionsOnASingleLine: Inline` and
+  `AccessModifierOffset: -4`, the only place this repository's formatting differs
+  from its siblings. clang-format has no separate C language — `.c` and `.cpp`
+  are both `Cpp` — so there is no language-scoped section to put it in, and this
+  repository's own code is entirely C++. With the inherited `None`, each of the
+  fifteen trivial accessors in `CrsfPort.h` became a four-line block, which is
+  right for C and makes the library's main header hard to read.
+
+### Fixed
+
+- There was no `.clang-tidy` at all, so the `lint` job ran with defaults.
+- Three files did not match `.clang-format`.
+- clang-tidy analysed the vendored core as C++ and reported
+  `misc-const-correctness` in `crsf_codec.h` — a finding that does not even apply
+  in C, where that file is compiled everywhere else. The header filter now
+  matches only `CrsfPort.h` and `crsf_arduino_conf.h`.
+- A missing space in the clang-tidy invocation in `tools/ci.sh`.
 
 ## [0.1.0] — 2026-09-28
 

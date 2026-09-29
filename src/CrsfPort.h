@@ -67,7 +67,8 @@ extern "C" {
  * Allocates nothing: the protocol state is a member, so the object can be a
  * global exactly as an Arduino sketch expects.
  */
-class CrsfPort {
+class CrsfPort
+{
 public:
     /**
      * @brief Bind to a stream that something else opens.
