@@ -1,16 +1,10 @@
-# Format rules for CRSFv3, checked by tools/ci.sh lint and the lint stage in
-# .gitlab-ci.yml.
+# Format rules for CRSFv3, run by tools/ci.sh lint.
 #
-# This file describes the style the repository already had; it does not
-# introduce a new one. It was measured against the ready-made standard styles,
-# and all of them fit badly: LLVM and Google change around 130 % of the lines,
-# GNU and Mozilla over 160 %, WebKit as the best still 28 %. With the settings
-# below 15 % remained, and two fifths of that fell on the two hand-aligned
-# tables in crsf_crc.c and crsf_protocol.h -- both are now excluded with
-# `clang-format off`, because their alignment is deliberate.
+# This describes the style the repository already had. Measured against the
+# stock styles, all fit badly: LLVM and Google rewrite ~130 % of lines, GNU and
+# Mozilla >160 %, WebKit 28 %. The settings below leave 15 %.
 #
-# The style in one sentence: Linux braces, four spaces, star on the name, no
-# automatic wrapping.
+# In one sentence: Linux braces, four spaces, star on the name, no auto-wrap.
 
 BasedOnStyle: LLVM
 
@@ -18,42 +12,28 @@ IndentWidth: 4
 TabWidth: 4
 UseTab: Never
 
-# No column limit, so clang-format does not re-wrap anything that is already
-# wrapped. This is the most important switch here: with a limit, the tool
-# reformats every expression to its own taste and the diff grows large without
-# a single line becoming more readable. Line length stays the author's business
-# -- the existing code is under 100 columns but for two files, and should stay
-# that way.
+# No limit, so nothing already wrapped gets re-wrapped. The most important
+# switch here: with a limit the tool reformats every expression to its own
+# taste. Line length stays the author's business.
 ColumnLimit: 0
 
-# Function body brace on its own line, control-flow brace on the same line.
 BreakBeforeBraces: Linux
 
 # uint8_t *out, not uint8_t* out.
 PointerAlignment: Right
 ReferenceAlignment: Right
 
-# The include order is deliberate (own header first, then system); clang-format
-# must not re-sort it alphabetically.
+# Own header first, then system. Not alphabetical.
 SortIncludes: Never
 
-# A one-line body belongs on its own lines for a function too; the short form
-# `if (!r) { return false; }` for guards stays allowed. A deviation from the
-# three sister projects, and the only one.
-#
-# clang-format has no separate "C": .c and .cpp are both formatted as Cpp, so
-# there is no language-dependent section. This repository's own code is
-# entirely C++ -- the vendored core is not checked anyway -- which is why the
-# setting can be changed here without side effects.
-#
-# With None, each of the roughly fifteen trivial accessors in CRSFv3.h becomes
-# a four-liner. That is right for C, which has none, and makes exactly the file
-# unreadable that is the library's shop window. Inline leaves only short
-# methods defined *inside* a class on one line; free-standing functions stay
-# expanded as everywhere else.
+# Inline, not None: with None each of the ~15 trivial accessors in CRSFv3.h
+# becomes a four-liner, which makes the library's shop-window header unreadable.
+# Inline keeps only in-class short methods on one line. The only deviation from
+# the sibling repositories; clang-format has no separate C, so it cannot be
+# scoped to C++ -- harmless, since this repository's own code is all C++.
 AllowShortFunctionsOnASingleLine: Inline
 
-# public:/private: at class level rather than indented by two columns.
+# public:/private: at class level, not indented.
 AccessModifierOffset: -4
 AllowShortBlocksOnASingleLine: Always
 AllowShortIfStatementsOnASingleLine: WithoutElse
@@ -63,15 +43,13 @@ AllowShortCaseLabelsOnASingleLine: false
 # (uint8_t)x, not (uint8_t) x.
 SpaceAfterCStyleCast: false
 
-# case at the level of the switch, as in the existing code.
 IndentCaseLabels: false
 IndentGotoLabels: false
 IndentPPDirectives: None
 
-# Do not force alignment: the existing code aligns `=` deliberately in some
-# blocks and deliberately not in others. A global Consecutive grew the diff
-# measurably (15 % -> 17 %), because it rewrites the unaligned places. Where
-# alignment is intended, it sits under `clang-format off`.
+# Do not force alignment: the code aligns `=` deliberately in some blocks and
+# deliberately not in others. Where it is intended it sits under
+# `clang-format off`.
 AlignConsecutiveAssignments: None
 AlignConsecutiveDeclarations: None
 AlignConsecutiveMacros: None
@@ -80,15 +58,13 @@ AlignEscapedNewlines: Left
 AlignAfterOpenBracket: Align
 AlignOperands: Align
 
-# Do not re-wrap comments. The files are heavily commented, often with
-# paragraphs, lists and column tables inside them; a reflow takes those apart.
+# The files are heavily commented, often with lists and tables. A reflow would
+# take those apart.
 ReflowComments: false
 
-# Pack arguments and parameters densely rather than one per line.
 BinPackArguments: true
 BinPackParameters: true
 
-# Remove a blank line at the start of a block, collapse multiple blank lines.
 KeepEmptyLinesAtTheStartOfBlocks: false
 MaxEmptyLinesToKeep: 1
 

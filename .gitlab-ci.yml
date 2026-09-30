@@ -1,23 +1,13 @@
-# CI for the Arduino library CRSFv3.
+# CI for the Arduino library CRSFv3. Five stages, fast to slow:
 #
-# Five stages, fast to slow:
+#   lint     Formatting, static analysis, arduino-lint, version consistency.
+#   test     Host unit tests against a mock Arduino runtime.
+#   build    Every example compiled for all four architectures.
+#   docs     Doxygen, with WARN_AS_ERROR.
+#   release  An annotated tag becomes a GitLab release object.
 #
-#   lint     Formatting, whitespace, static analysis, the Arduino specification
-#            via arduino-lint, and the check that every place a version is
-#            written says the same one.
-#   test     Host unit tests from tests/ -- plain gcc against a mock Arduino
-#            runtime, no target platform, runs in seconds.
-#   build    Compiles every example for each of the four supported
-#            architectures with arduino-cli. This is the stage that catches a
-#            sketch which no longer builds on a board nobody has to hand.
-#   docs     Doxygen. The Doxyfile has WARN_AS_ERROR = FAIL_ON_WARNINGS, so the
-#            job fails as soon as a public declaration is undocumented or an
-#            @param no longer matches the signature.
-#   release  Turns an annotated tag into a GitLab release object.
-#
-# The protocol itself is not tested here. It is c_crsf, vendored into src/ and
-# checked in its own repository; the vendor-unmodified job proves the copy is
-# unchanged. What this repository tests is the Arduino layer on top of it.
+# The protocol is not tested here -- it is c_crsf, checked in its own
+# repository. This repository tests the Arduino layer on top of it.
 
 stages:
   - lint
@@ -40,17 +30,9 @@ workflow:
 
 # --- lint ---------------------------------------------------------------------
 
-# Formatting and static analysis.
-#
-# Why the image is pinned to a major version: clang-format's output changes
-# between major versions. If a different one runs here than locally, this job
-# goes red although `tools/ci.sh lint` was green on the machine -- and nobody
-# can reproduce it.
-#
-# The job calls tools/ci.sh rather than the tools directly: otherwise there are
-# two implementations of the same check, and they drift. --strict turns a
-# missing tool into a failure rather than a SKIP, because in CI a silently
-# skipped lint is worth nothing.
+# The image is pinned to a major version because clang-format's output changes
+# between them -- otherwise this job goes red on something nobody can reproduce
+# locally. --strict makes a missing tool a failure, not a SKIP.
 lint:
   stage: lint
   image: silkeh/clang:20
@@ -59,23 +41,16 @@ lint:
   script:
     - bash tools/ci.sh lint --strict
 
-# A version appears in several places; all of them must say the same thing.
+# The version is written in four files; all must agree with the tag.
 #
-# Tag scheme:
-#   release_X.Y.Z          -> VERSION: X.Y.Z
-#   prerelease_X.Y.Z_dev   -> VERSION: X.Y.Z-dev
+#   release_X.Y.Z          -> X.Y.Z
+#   prerelease_X.Y.Z_dev   -> X.Y.Z-dev   (semver needs the hyphen, the tag
+#                                          cannot have one)
 #
-# The tag name is a git reference and may look however it likes. The version may
-# not: semver appends a pre-release marker with a hyphen, so "0.4.0_dev" is not
-# a valid version, although "prerelease_0.4.0_dev" is a perfectly usable tag.
-#
-# Why check at all: "tagged as X, the file still says Y" is the classic release
-# mistake, and it only shows up once somebody pulls the library. For this
-# library it is worse than usual, because library.properties is exactly what the
-# Arduino Library Manager reads out of the tag -- a wrong version there gets
-# published, not merely left wrong locally. The Doxyfile is explicitly included:
-# that is precisely where the version in esp_crsf silently stayed at 0.3.0,
-# because nobody read it.
+# This matters more than usual here: library.properties is what the Arduino
+# Library Manager reads out of the tag, so a wrong version gets published rather
+# than just sitting wrong locally. The Doxyfile is included because that is
+# where esp_crsf's version silently stayed at 0.3.0.
 version-matches-tag:
   stage: lint
   image: alpine:3.20
@@ -147,26 +122,20 @@ vendor-unmodified:
     - bash tools/sync_core.sh --check
 
 # arduino-lint checks library.properties, the src/ layout and the
-# examples/<Name>/<Name>.ino rule: the things that break quietly.
+# examples/<Name>/<Name>.ino rule.
 #
-# LIBRARY_MANAGER_MODE has to be changed once, by hand, when the library is
-# accepted into the registry. The two modes check opposite things:
+# LIBRARY_MANAGER_MODE must be switched by hand once the registry accepts the
+# library. The modes check opposite things:
 #
-#   submit   Not in the index yet. LP017 fails if the name is already taken,
-#            which is the likeliest reason a submission is turned away. That is
-#            what it is set to now.
-#   update   In the index. LP018 fails if the name is *not* found, catching a
-#            rename the registry does not allow, and --compliance strict
-#            promotes LP022 (tag ahead of the version field) to an error.
+#   submit   Not indexed yet. LP017 fails if the name is already taken.
+#   update   Indexed. LP018 fails if the name is *not* found.
 #
-# Left on submit after acceptance, LP017 fires against our own index entry.
-# After switching to update, LP018 keeps failing for up to a day, until the
-# index has actually been rebuilt with the new entry; it clears itself.
+# Left on submit after acceptance, LP017 fires against our own entry. After
+# switching, LP018 fails for up to a day until the index rebuilds; it clears
+# itself.
 #
-# The job calls tools/ci.sh, which lints a copy of the tracked files rather than
-# the checkout: rule LS007 fails on any .exe, and build_tests/ is full of them
-# on a Windows machine -- build_wiki/ additionally holds a whole nested git
-# clone of the wiki.
+# ci.sh lints a copy of the tracked files: LS007 fails on any .exe, and the
+# ignored build_*/ directories are full of them.
 arduino-lint:
   stage: lint
   image: debian:bookworm-slim
@@ -182,8 +151,7 @@ arduino-lint:
 
 # --- test ---------------------------------------------------------------------
 
-# The suites from tests/Makefile. -Werror is already set there, so a warning
-# breaks the build in any case.
+# tests/Makefile already sets -Werror.
 unit-tests:
   stage: test
   image: gcc:14
@@ -201,10 +169,8 @@ unit-tests:
       junit: build_tests/junit.xml
     expire_in: 1 week
 
-# The suites check invariants and output bounds, but a read outside a buffer
-# only shows up under ASan. That is what the sanitize target in the Makefile is
-# for -- here there is a toolchain that can do it. Locally on Cygwin there is
-# not, which is why it is a target of its own.
+# A read outside a buffer only shows up under ASan. Separate target because
+# Cygwin has no libasan.
 unit-tests-sanitized:
   stage: test
   image: gcc:14
@@ -216,14 +182,8 @@ unit-tests-sanitized:
 
 # --- build --------------------------------------------------------------------
 
-# Compile the examples for four architectures.
-#
-# --library . builds against the working tree without installing into a
-# sketchbook first; without it arduino-cli does not find the library and the
-# examples fail for the wrong reason.
-#
-# The cache is not optional: the esp32 core is around 250 MB, and without it
-# every matrix cell downloads everything again.
+# --library . builds against the working tree instead of a sketchbook install.
+# The cache is not optional: the esp32 core alone is ~250 MB.
 build-examples:
   stage: build
   image: debian:bookworm-slim
@@ -280,19 +240,13 @@ doxygen:
   script:
     - doxygen Doxyfile
 
-# GitLab Pages: publish the generated API documentation from main.
+# Publish the API documentation from main.
 #
-# Does not block the pipeline, for a reason that has nothing to do with this
-# repository: the nginx in front of the instance accepts 1 MB per request, the
-# public artifact is larger, and the upload ends with "413 Request Entity Too
-# Large". Pages is filled exclusively through that artifact, so it cannot be
-# optimised away. As soon as the limit is raised, the job publishes by itself:
-#
-#   nginx['client_max_body_size'] = '0'   in /etc/gitlab/gitlab.rb
-#   + gitlab-ctl reconfigure
-#
-# The same limit caps git-push over HTTPS and every attachment in the web UI, by
-# the way. When it goes, this allow_failure should go with it.
+# allow_failure for a reason outside this repository: the instance's nginx caps
+# requests at 1 MB and the artifact is larger, so the upload 413s. Pages is fed
+# only through that artifact, so it cannot be optimised away. Lift the cap with
+# nginx['client_max_body_size'] = '0' in /etc/gitlab/gitlab.rb, and drop this
+# allow_failure with it.
 pages:
   stage: docs
   image: alpine:3.20
@@ -314,23 +268,15 @@ pages:
 
 # --- release ------------------------------------------------------------------
 
-# Turns an annotated tag into a GitLab release object.
+# An annotated tag becomes a GitLab release object, so Releases is not an empty
+# page.
 #
-# Why at all: before, a release was a tag and nothing else. Anyone pulling the
-# library sees an empty page under Releases and has to go looking for the
-# changelog in the repository. The release object is where GitLab, the API and
-# every integration look it up.
+# The description comes from CHANGELOG.md, not the tag message: the changelog is
+# reviewed in the merge request. changelog_section.py errors out if the section
+# is missing, so you cannot tag without having written it.
 #
-# The description comes from CHANGELOG.md and not from the tag message: the
-# changelog is read and reviewed in the merge request, a tag message is not.
-# tools/changelog_section.py cuts the section out and exits with an error if it
-# does not exist -- so you cannot tag without having written the entry.
-#
-# Only release_*, not prerelease_*: a release is something you install.
-#
-# No uploaded assets, but links to archives GitLab generates on request. That is
-# not a style decision: an upload would run into the same 1 MB limit as pages
-# above. A source archive of the tag contains the library in full anyway.
+# Only release_*, not prerelease_*. Assets are links to archives GitLab
+# generates on request -- an upload would hit the same 1 MB cap as pages.
 release:
   stage: release
   image: registry.gitlab.com/gitlab-org/release-cli:latest

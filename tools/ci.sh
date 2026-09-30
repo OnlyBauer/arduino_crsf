@@ -140,16 +140,11 @@ stage_lint() {
   return $rc
 }
 
-# arduino-lint checks library.properties, the src/ layout and the
-# examples/<Name>/<Name>.ino rule: the things that break quietly.
+# Runs against a copy of the *tracked* files, not the checkout: rule LS007 fails
+# on any .exe, and the ignored build_*/ directories are full of them.
 #
-# It runs against a copy of the *tracked* files rather than the checkout. Rule
-# LS007 fails on any .exe, and on a Windows machine build_tests/ is full of
-# them; build_wiki/ additionally holds a whole nested git clone of the wiki.
-# Neither is in the repository, so neither should be in what gets linted.
-#
-# LIBRARY_MANAGER_MODE mirrors the variable in .gitlab-ci.yml and must hold the
-# same value; see the comment on that job for when it changes.
+# LIBRARY_MANAGER_MODE mirrors the variable in .gitlab-ci.yml and must match it;
+# that job's comment says when it changes.
 stage_arduino_lint() {
   banner "arduino-lint"
   if ! have arduino-lint; then

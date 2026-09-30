@@ -7,19 +7,11 @@
 #   tools/sync_core.sh --pin                   record the tree hash after committing
 #   tools/sync_core.sh --check                 verify the copy, offline
 #
-# Why a copy and not a submodule. Four repositories consume this core, and one
-# of them is an Arduino library: the Arduino Library Manager packs a zip from
-# the git tag and does not fetch submodules, so a submodule would ship broken to
-# the people least able to diagnose it. One mechanism for all four beats a
-# special case, and a vendored copy also means a source tarball of any tag is
-# complete on its own.
+# A copy, not a submodule: the Arduino Library Manager zips the git tag and
+# does not fetch submodules, so a submodule would ship broken.
 #
-# What stops it rotting. The pin below records the git *tree* hash of
-# vendor/c_crsf, and --check compares it. A tree hash is used rather than a
-# sha256 manifest for a specific reason: git computes it from the blobs as
-# stored, so core.autocrlf=true on a Windows working copy -- the default, and
-# what this project is developed on -- cannot make it disagree. A checksum over
-# the files on disk would fail on exactly that machine and nowhere else.
+# The pin records a git hash, not a checksum of the files on disk: git stores
+# blobs normalised, so core.autocrlf on Windows cannot make it disagree.
 set -eu
 
 REPO=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
@@ -55,37 +47,25 @@ CRSF_CORE_URL=${CRSF_CORE_URL:-https://git.bauer.pub/Bauer/c_crsf.git}
 
 # --- what a sync copies -------------------------------------------------------
 #
-# Deliberately not everything. The core's own protocol suites do not come along:
-# the pin already proves the copy matches a tag whose pipeline was green, so
-# re-running 6.6 kLOC of them in every consumer is weight without information.
-# Flat, and that is not a stylistic choice.
+# Not the core's own protocol suites: the pin already proves the copy matches a
+# green tag, so re-running them here is weight without information.
 #
-# The Arduino 1.5 library format compiles src/ recursively but puts only src/
-# itself on the include path. A core under src/c_crsf/ would therefore force
-# every vendored file to be edited to say #include "c_crsf/crsf_codec.h" -- which
-# is exactly the drift this whole mechanism exists to prevent. Flattening costs a
-# cluttered src/ and buys zero edits.
-#
-# The metadata that must not be compiled goes to extras/, which is the Arduino
-# convention for "in the repository, never a source file".
-# Exactly the files a sync owns.
-#
-# The flat layout is forced on us by the Arduino 1.5 format, and it means
-# vendored and hand-written sources share one directory. So the set cannot be
-# inferred from the directory: crsf_arduino_conf.h is this library's own file and
-# only shares the prefix. Deleting it on every sync was a real bug, found by the
-# drift check reporting it as missing.
+# Flat, and not by choice. Arduino 1.5 compiles src/ recursively but puts only
+# src/ itself on the include path, so a core under src/c_crsf/ would force an
+# edit to every vendored #include -- the exact drift this mechanism prevents.
+# Metadata that must not be compiled goes to extras/.
+# Exactly the files a sync owns. The flat layout means vendored and hand-written
+# sources share a directory, so the set cannot be inferred from it:
+# crsf_arduino_conf.h is ours and only shares the prefix. Deleting it on every
+# sync was a real bug.
 vendored_files() {
   ls "$DEST"/crsf_*.c "$DEST"/crsf_*.h 2>/dev/null |
     grep -v 'crsf_arduino_conf[.]h$' || true
 }
 
-# The pin, for a layout where a directory tree hash would be wrong.
-#
-# Hashing the *index* entries of the vendored files is as CRLF-proof as a tree
-# hash -- git stores them normalised, so core.autocrlf on a Windows working copy
-# cannot upset it -- and it covers exactly the right set, where a tree hash over
-# src/ would report every edit to CRSFv3.cpp as vendor drift.
+# Hash the index entries of the vendored files, not a tree hash over src/:
+# equally CRLF-proof, but covers the right set -- a tree hash would report every
+# edit to CRSFv3.cpp as vendor drift.
 vendored_hash() {
   # The paths are all crsf_*.c and crsf_*.h, so word splitting is safe here.
   # shellcheck disable=SC2046

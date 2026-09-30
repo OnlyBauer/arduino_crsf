@@ -3,11 +3,9 @@
  * @file CRSFv3.cpp
  * @brief The Arduino port. See CRSFv3.h.
  *
- * There is very little here, which is the point. A `Stream` already is a byte
- * sink and a byte source, and `micros()` is a clock, so the hooks the protocol
- * layer insists on are three short functions. Everything that makes CRSF
- * difficult is in the vendored core, identical to what the ESP-IDF and STM32
- * ports run.
+ * Very little here, which is the point: a `Stream` is already a byte sink and
+ * source and `micros()` is a clock, so the protocol layer's hooks are three
+ * short functions. Everything hard is in the vendored core.
  */
 
 #include "CRSFv3.h"
@@ -17,14 +15,12 @@ bool CRSFv3::txPush(void *ctx, const uint8_t *frame, size_t len)
     CRSFv3 *self = static_cast<CRSFv3 *>(ctx);
 
     /*
-     * Refuse rather than block where the API allows it to be asked.
+     * Refuse rather than block, where the API lets us ask.
      *
-     * Stream::write() blocks once the outgoing ring is full, and the protocol
-     * layer calls this from inside its periodic tick -- so blocking here would
-     * make the telemetry schedule the sketch's latency budget.
-     * availableForWrite() is not part of the Stream base class, so this is only
-     * possible when we were handed a HardwareSerial. On a plain Stream the
-     * write is taken as-is, which is the caller's choice of transport.
+     * Stream::write() blocks once the outgoing ring is full, and this is called
+     * from the protocol layer's periodic tick -- blocking would make the
+     * telemetry schedule the sketch's latency budget. availableForWrite() is
+     * not on the Stream base class, so this only works for a HardwareSerial.
      */
     if (self->uart_) {
         const int room = self->uart_->availableForWrite();
@@ -40,18 +36,15 @@ int64_t CRSFv3::nowUs(void *ctx)
     (void)ctx;
 
     /*
-     * micros() is 32 bits and wraps every 71.6 minutes, so it is widened here.
-     * A flight is longer than that often enough to matter, and the protocol
-     * layer computes every age as a signed difference: a clock that jumps
-     * backwards stops the telemetry scheduler until it catches up.
+     * micros() is 32 bits and wraps every 71.6 minutes, so widen it: the
+     * protocol layer takes every age as a signed difference, and a clock that
+     * jumps back stalls the telemetry scheduler until it catches up.
      *
-     * It also never returns 0, because 0 is the protocol layer's "this never
-     * happened" sentinel. micros() reads 0 for the first microsecond after
-     * reset, and a port that hands that over makes the scheduler re-emit on
-     * every call until the counter moves.
+     * Never returns 0 -- that is the protocol layer's "never happened"
+     * sentinel, and micros() reads 0 for the first microsecond after reset.
      *
-     * Static, and therefore shared by every CRSFv3 in the sketch. That is
-     * correct: they are all reading the same machine clock.
+     * Static, so shared by every CRSFv3 in the sketch. Correct: one machine
+     * clock.
      */
     static uint32_t last = 0;
     static int64_t high = 0;

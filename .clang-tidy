@@ -1,15 +1,9 @@
-# Static analysis for CRSFv3, checked by tools/ci.sh lint and the lint stage in
-# .gitlab-ci.yml.
+# Static analysis for CRSFv3, run by tools/ci.sh lint.
 #
-# The purpose of this job is explicitly regression protection, not bug hunting:
-# at the state it was introduced in, the enabled checks report nothing over this
-# library's own code (CRSFv3.cpp/.h, the tests, the Arduino mock). The job is
-# therefore blocking from the start and not allow_failure: it should go red as
-# soon as the next patch brings something new in.
-#
-# WarningsAsErrors is deliberately set to everything that enables checks at all.
-# A clang-tidy run without it returns exit code 0 even on warnings and would be
-# silently useless in CI.
+# Regression protection, not bug hunting: the enabled checks report nothing on
+# this library's own code today, so the job blocks from the start and should go
+# red on the first patch that changes that. WarningsAsErrors is required --
+# without it clang-tidy exits 0 on warnings and the job proves nothing.
 
 Checks: >
   -*,
@@ -28,83 +22,34 @@ Checks: >
   -cert-dcl37-c,
   -cert-dcl51-cpp,
   -cert-err33-c,
+  -cert-err58-cpp,
   -clang-analyzer-optin.performance.Padding,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
   -misc-include-cleaner,
   -misc-no-recursion,
   -misc-const-correctness,
-  -misc-use-anonymous-namespace,
-  -cert-err58-cpp
+  -misc-use-anonymous-namespace
 
 WarningsAsErrors: '*'
 
-# Only this repository's own headers. The vendored core is c_crsf's code, is
-# checked there, and two clang versions over the same file produce nothing but
-# phantom findings in the long run. For this library there is more to it: the
-# core is compiled as C++ here, and misc-const-correctness then reports things
-# in crsf_codec.h that do not hold in C at all -- the same reason the check is
-# switched off below for the whole repository.
+# Only this repository's own headers. The vendored core is checked in c_crsf,
+# and it is compiled as C++ here, which makes some checks fire on C idioms.
 HeaderFilterRegex: '(CRSFv3|crsf_arduino_conf)\.h$'
 
-# A reason for every single exclusion above -- without this list, nobody would
-# know next time whether a check is missing for a good reason or out of
-# convenience:
+# Why each check above is off -- so the next reader knows it was a decision:
 #
-# bugprone-easily-swappable-parameters
-#   Reports every function with two adjacent parameters of the same type. For a
-#   wire-protocol API that is the normal case and unavoidable:
-#   crsf_build_frame(dst, cap, addr, type) has four uint8_t in a row, because
-#   the format has four bytes in a row.
-#
-# bugprone-narrowing-conversions
-#   For a wire protocol that constantly converts between widths, this check
-#   permanently reports conversions that a clamp already performed has long
-#   made safe; it cannot see such a clamp.
-#
-# clang-analyzer-optin.performance.Padding
-#   Reports structures that would be smaller with a different field order. For
-#   the payload structures the order is dictated by the wire format and must
-#   precisely not be sorted by size.
-#
-# cert-err33-c
-#   Requires checking the return value of printf & co. In the test suites and
-#   the examples that is pointless.
-#
-# cert-dcl37-c / cert-dcl51-cpp
-#   Reserved identifiers. Fires on the include guards (CRSF_..._H), which are
-#   not reserved.
-#
-# clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling
-#   Requires memcpy_s / memset_s from C11 Annex K. That is optional, and none of
-#   the C libraries in question here -- newlib, glibc, avr-libc -- provides it.
-#
-# misc-include-cleaner
-#   Requires including every name used directly. Would dilute rather than
-#   improve the deliberately maintained include structure of the vendored core,
-#   and is c_crsf's decision anyway, not this repository's.
-#
-# misc-no-recursion
-#   There is no recursion; the check is merely expensive.
-#
-# misc-const-correctness
-#   The vendored core is C and is checked as such in c_crsf. Here it
-#   additionally goes through a C++ compiler, because CRSFv3.cpp includes it
-#   directly, and this check then reports C idioms that do not hold in C at all
-#   -- above all the scalar variables the CHECK_EQ_* macros from test_util.h
-#   create. test_util.h is taken over unchanged from c_crsf and is not adjusted
-#   for a C++ quirk that exists in no other repository of this project.
-#
-# misc-use-anonymous-namespace
-#   Requires anonymous namespaces instead of internal linkage via `static`.
-#   `static` for file-local functions and variables is the idiom every single
-#   test file in every one of the four repositories uses -- the other three are
-#   pure C, where anonymous namespaces do not exist. Keeping this one C++ file
-#   consistent with the others weighs more than a Cpp Core Guidelines preference
-#   with no effect on behaviour or readability.
-#
-# cert-err58-cpp
-#   Requires that the constructor of an object with static storage duration
-#   cannot throw. Here that concerns test mocks like MockSerial exclusively,
-#   whose constructor calls reset() -- plain field assignments, no allocation.
-#   No repository of this project uses or enables exception handling; it is a
-#   target for microcontrollers.
+#   easily-swappable-parameters  A wire API has runs of same-typed bytes.
+#   narrowing-conversions        Cannot see a clamp that already made it safe.
+#   dcl37-c / dcl51-cpp          Fires on the CRSF_..._H include guards.
+#   err33-c                      printf return values, in tests and examples.
+#   err58-cpp                    Test mocks at static scope; we build without
+#                                exceptions anyway.
+#   Padding                      Payload field order is the wire format's.
+#   insecureAPI...BufferHandling Wants C11 Annex K; newlib and avr-libc lack it.
+#   include-cleaner              The vendored core's include structure is
+#                                c_crsf's business.
+#   no-recursion                 There is none; the check is just slow.
+#   const-correctness            Reports C idioms the C++ pass invents, mainly
+#                                in test_util.h, which is c_crsf's file.
+#   use-anonymous-namespace      `static` is the idiom in all four sibling
+#                                repositories, three of which are pure C.

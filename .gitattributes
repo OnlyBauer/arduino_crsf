@@ -1,9 +1,5 @@
-# Pin down the line endings. The library is developed on Windows and built in
-# Linux containers; without this file it depends on the local core.autocrlf
-# setting whether a commit carries CRLF into the repository.
-#
-# `* text=auto` normalises everything Git considers text to LF in the
-# repository. The entries below take the heuristic out of the equation.
+# Pin line endings. Developed on Windows, built in Linux containers; without
+# this file it depends on the local core.autocrlf whether a commit carries CRLF.
 
 * text=auto
 
@@ -29,22 +25,18 @@ library.properties text eol=lf
 .editorconfig text eol=lf
 .gitattributes text eol=lf
 
-# .txt too, for a concrete reason: extras/vendor/golden_trace.txt is compared
-# byte for byte against what a run produces. Without this line core.autocrlf=true
-# turns it into CRLF in the working tree, and the comparison fails for everyone
-# but the developer -- with a diff that looks like a real protocol error.
+# extras/vendor/golden_trace.txt is compared byte for byte against what a run
+# produces; CRLF there fails for everyone but the developer, with a diff that
+# looks like a real protocol error.
 *.txt  text eol=lf
 
-# keywords.txt needs real tabs; the IDE splits on them and silently ignores a
-# line that uses spaces. This entry is here only for the line endings, though --
-# .gitattributes cannot protect tabs, tools/ci.sh lint does that.
+# keywords.txt needs real tabs. This line is only about line endings --
+# .gitattributes cannot protect tabs, tools/ci.sh lint does.
 keywords.txt text eol=lf
 
-# PowerShell expects CRLF.
 *.ps1  text eol=crlf
 
-# The vendored core is a copy of c_crsf and is not touched here. It sits flat in
-# src/, because the Arduino 1.5 format puts only src/ itself on the include path
-# -- a subdirectory would force changes to the vendored files.
+# The vendored core sits flat in src/, because Arduino 1.5 puts only src/ itself
+# on the include path.
 src/crsf_*.h linguist-vendored
 src/crsf_*.c linguist-vendored

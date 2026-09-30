@@ -4,18 +4,13 @@
 # Turn the host test suites' plain-text output into a JUnit XML report, so
 # GitLab's Tests tab shows one row per suite instead of nothing at all.
 #
-# The suites are deliberately framework-free (see tests/test_util.h): each one
-# prints its own failures inline, at the call site, as "  file:line: what: ...",
-# and ends with exactly one summary line, "PASS  <name>  <n> checks" or
-# "FAIL  <name>  <f>/<n> checks failed" (test_util.h's test_end()). Nothing
-# else is printed between one suite's checks and its own summary line, because
-# `make -C tests run` runs the suites one at a time and dumps each one's whole
-# captured output as a single block before moving to the next.
+# The suites are framework-free (tests/test_util.h): failures print inline as
+# "  file:line: what: ...", and each suite ends with one summary line, "PASS
+# <name> <n> checks" or "FAIL <name> <f>/<n> checks failed". Suites run one at
+# a time, so nothing interleaves.
 #
-# That is enough structure to report one <testcase> per suite without teaching
-# the suites anything about JUnit: buffer lines since the last summary, and
-# when a summary line arrives, it owns everything buffered since the one
-# before it.
+# Enough structure for one <testcase> per suite without teaching the suites
+# about JUnit: buffer lines, and each summary owns everything since the last.
 #
 # Usage: junit_from_tests.sh <test-output.txt> > junit.xml
 # Reads stdin instead if no file is given.

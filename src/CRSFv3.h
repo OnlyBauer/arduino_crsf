@@ -25,29 +25,24 @@
  * @endcode
  *
  * @par The whole API, not just these methods
- * There are about fifteen convenience methods here, for what a thirty-line
- * sketch actually does. Everything else — the parameter protocol, the MAVLink
- * and MSP tunnels, `0x32` Direct Commands, routing, baudrate negotiation and
- * every `crsf_send_*` and `crsf_publish_*` — is the C API, reached through
- * port() or the implicit conversion:
+ * The ~15 methods here cover what a short sketch does. Everything else -- the
+ * parameter protocol, the tunnels, `0x32` commands, routing, and every
+ * `crsf_send_*` / `crsf_publish_*` -- is the C API, via port() or the implicit
+ * conversion:
  *
  * @code
  * crsf_publish_gps(crsf, &gps);      // the conversion makes this work
  * crsf_params_attach_provider(crsf.port(), &provider);
  * @endcode
  *
- * That is deliberate rather than lazy. Wrapping all ~120 functions would double
- * the documentation, guarantee that a function added upstream silently does not
- * appear here, and buy nothing at the byte level: Arduino compiles with
- * `-ffunction-sections -Wl,--gc-sections`, so an unreferenced C function costs
- * exactly as little as an unreferenced inline method would. It is documented
- * once, in c_crsf, and not paraphrased here.
+ * Deliberate: wrapping all ~120 functions would double the documentation and
+ * silently omit anything added upstream, while saving nothing -- Arduino links
+ * with `--gc-sections`, so an unreferenced C function costs no more than an
+ * unreferenced inline would. Documented once, in c_crsf.
  *
  * @par AVR is not supported
- * A port needs about 3.5 KB of RAM. An ATmega328P has 2 KB in total. There is no
- * combination of switches that closes a gap of that size and leaves something
- * still worth calling a CRSF library — see the README. Compiling for AVR stops
- * with an `#error` rather than an incomprehensible link failure.
+ * A port needs ~3.5 KB of RAM; an ATmega328P has 2 KB. Building for AVR stops
+ * with an `#error` rather than an incomprehensible link failure. See the README.
  */
 
 #ifndef CRSFV3_H
@@ -73,9 +68,8 @@ public:
     /**
      * @brief Bind to a stream that something else opens.
      *
-     * Use this when the port is not a `HardwareSerial` — a `SoftwareSerial`, a
-     * USB CDC, a test double — or when you want to call `begin()` on the serial
-     * yourself.
+     * For anything that is not a `HardwareSerial` -- `SoftwareSerial`, USB CDC,
+     * a test double -- or when you want to open the serial yourself.
      *
      * @param io The stream; must outlive this object.
      */
@@ -90,9 +84,8 @@ public:
     /**
      * @brief Open the port.
      *
-     * When constructed from a `HardwareSerial`, this calls `begin()` on it at
-     * @p baud. When constructed from a `Stream`, the stream is assumed to be
-     * open already and @p baud is used only to pace telemetry.
+     * From a `HardwareSerial` this calls `begin()` on it at @p baud. From a
+     * `Stream` the stream is assumed open, and @p baud only paces telemetry.
      *
      * @param baud Line rate; 0 selects 416666, the full-duplex default.
      * @param role Which end of the link this is.
@@ -113,13 +106,11 @@ public:
     /**
      * @brief Service the port. Call this every pass through `loop()`.
      *
-     * Reads whatever the stream has, hands it to the protocol layer, and runs
-     * the periodic work: the telemetry scheduler, the parameter walk and the
-     * baudrate fallback.
+     * Reads the stream, feeds the protocol layer, and runs the periodic work:
+     * telemetry scheduler, parameter walk, baudrate fallback.
      *
-     * Call it often. The telemetry scheduler cannot resolve finer than the
-     * interval between calls, so a sketch that blocks for 200 ms cannot honour a
-     * 100 ms cadence.
+     * Call it often -- the scheduler cannot resolve finer than the gap between
+     * calls, so a sketch that blocks for 200 ms cannot honour a 100 ms cadence.
      */
     void loop();
 
@@ -141,8 +132,7 @@ public:
     operator crsf_handle_t() { return &port_; }
 
     /** @name What a sketch usually wants
-     *  Thin inlines over the C API. Nothing here is unique to Arduino; it is
-     *  spelled the way a sketch reads best.
+     *  Thin inlines over the C API, spelled the way a sketch reads best.
      *  @{
      */
 

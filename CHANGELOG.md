@@ -89,6 +89,18 @@ that, and both are enforced by CI before a tag can be made:
 
 ## [Unreleased]
 
+### Changed
+
+- Shortened the comments throughout, by about 200 lines. `.clang-tidy` lost
+  two thirds of its file (a paragraph per disabled check became a line per
+  check), `.gitlab-ci.yml` and `.clang-format` about half. No setting, rule or
+  line of code changed anywhere: diffing the non-comment lines against 0.2.0 is
+  empty for every file touched.
+- Normalised the working-tree line endings of `LICENSE`, `tools/wiki-sync.sh`
+  and the two files in `extras/vendor/`, which were still CRLF from before
+  `.gitattributes` covered them. The committed blobs were already LF, so
+  nothing that was ever cloned or built was affected.
+
 ## [0.2.0] — 2026-09-30
 
 ### Changed

@@ -1,7 +1,5 @@
-# Editor defaults matching .clang-format. This file enforces nothing -- it only
-# makes an editor keep to the rules while you type, rather than having
-# tools/ci.sh lint complain about them afterwards. Read by VS Code, CLion, the
-# Arduino IDE 2 and Visual Studio without an extension.
+# Editor defaults matching .clang-format. Enforces nothing -- it only keeps an
+# editor to the rules while you type, so tools/ci.sh lint has nothing to say.
 
 root = true
 
@@ -28,8 +26,7 @@ indent_size = 4
 indent_style = tab
 
 [keywords.txt]
-# The Arduino IDE's parser splits on real tabs and silently ignores a line that
-# uses spaces.
+# The Arduino IDE splits on real tabs and silently ignores a line with spaces.
 indent_style = tab
 
 [*.ps1]
@@ -38,5 +35,5 @@ indent_style = space
 indent_size = 2
 
 [*.md]
-# Two trailing spaces are a hard line break in Markdown.
+# Two trailing spaces are a hard line break.
 trim_trailing_whitespace = false

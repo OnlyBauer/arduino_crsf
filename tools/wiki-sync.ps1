@@ -5,25 +5,23 @@ PowerShell twin of wiki-sync.sh; both do the same steps in the same order.
     tools\wiki-sync.ps1            build, commit locally, show what would change
     tools\wiki-sync.ps1 -Push      the same, and push it
 
-GitLab keeps a project wiki in a git repository of its own, right next to the
-project: https://<host>/<namespace>/<project>.wiki.git. Publishing is therefore
-an ordinary clone-commit-push, which is why this needs no API calls.
+A GitLab wiki is a git repository of its own at
+https://<host>/<namespace>/<project>.wiki.git, so this is a plain
+clone-commit-push and needs no API calls.
 
-Credentials. CI_JOB_TOKEN may read repositories but not write to them, so it
-cannot be used here - a push with it fails with 403. Provide instead:
+CI_JOB_TOKEN cannot write (403). Provide instead:
 
-    WIKI_TOKEN        a Project Access Token (role Developer, scope
-                      write_repository), stored as a masked CI variable
-    WIKI_TOKEN_USER   only for a deploy token: its username (default: oauth2)
-    WIKI_URL          overrides the whole URL, for anything unusual
+    WIKI_TOKEN        Project Access Token, role Developer, scope
+                      write_repository; a masked CI variable
+    WIKI_TOKEN_USER   deploy tokens only: its username (default: oauth2)
+    WIKI_URL          overrides the whole URL
     WIKI_BRANCH       branch to publish on when the wiki is still empty
 
-Run from a normal Windows shell the token is usually not needed at all: without
-WIKI_TOKEN the URL is derived from the origin remote and git uses whatever
-credential helper you already push the code with.
+From a normal Windows shell no token is usually needed: the URL is derived from
+the origin remote and git uses your existing credential helper.
 
-The token never reaches a log line or .git/config: it lives in the remote URL
-only while the push runs, and every message prints a scrubbed URL.
+The token never reaches a log line or .git/config -- it lives in the remote URL
+only while the push runs.
 
 The wiki must be enabled for the project (Settings -> General -> Visibility).
 A wiki that has never had a page has no repository yet and the clone fails;

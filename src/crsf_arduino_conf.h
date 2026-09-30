@@ -11,21 +11,13 @@
 #define CRSF_ARDUINO_CONF_H
 
 /*
- * AVR is not supported, and the numbers are not close.
+ * AVR is not supported, and the numbers are not close: a crsf_port_t is ~3552
+ * bytes measured, an ATmega328P has 2048 in total. Stripping the tunnels and
+ * the parameter protocol reaches ~1499, which is 73 % of the part's RAM and
+ * leaves the popular subset this project exists not to be.
  *
- * A crsf_port_t is about 3552 bytes, measured. An ATmega328P has 2048 bytes of
- * RAM in total -- before HardwareSerial's two 64-byte rings, before the stack,
- * before the sketch. Turning off the tunnels and the parameter protocol brings
- * it to roughly 1499, which is 73 % of all the RAM on the part, and produces
- * something that can no longer do the parameter protocol or the tunnels: that
- * is, the popular subset this project exists not to be.
- *
- * The architectures field in library.properties is only a hint -- the IDE will
- * still attempt the build and fail somewhere inside the linker, with a message
- * nobody can act on. This says it plainly instead.
- *
- * If you want to try anyway, the switches exist and this check can be defeated.
- * It will not fit.
+ * library.properties' architectures field is only a hint -- without this the
+ * IDE builds anyway and fails inside the linker, unactionably.
  */
 #if defined(__AVR__) && !defined(CRSF_ALLOW_AVR)
 #error "CRSFv3 needs about 3.5 KB of RAM; an ATmega328P has 2 KB. AVR boards are not supported -- see README.md, Architecture support. Use an ESP32, STM32, RP2040 or SAMD board. Define CRSF_ALLOW_AVR to attempt it anyway."
@@ -34,8 +26,7 @@
 /**
  * Bytes read from the stream per pass through loop().
  *
- * A CRSF frame is at most 64 bytes. Reading more per pass costs latency in the
- * sketch and gains nothing.
+ * A CRSF frame is at most 64 bytes; reading more per pass only costs latency.
  */
 #ifndef CRSF_ARDUINO_READ_CHUNK
 #define CRSF_ARDUINO_READ_CHUNK 64
@@ -44,9 +35,8 @@
 /**
  * Default line rate when begin() is given 0.
  *
- * 416666 is the CRSF full-duplex default. Not every board can produce it
- * exactly; a few per cent of error is tolerated, but a long way out shows up as
- * CRC failures rather than as an obvious fault.
+ * The CRSF full-duplex default, 416666. A few per cent of clock error is
+ * tolerated; further out shows up as CRC failures, not as an obvious fault.
  */
 #ifndef CRSF_ARDUINO_DEFAULT_BAUD
 #define CRSF_ARDUINO_DEFAULT_BAUD CRSF_BAUD_FULL_DUPLEX_DEFAULT

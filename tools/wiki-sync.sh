@@ -7,29 +7,26 @@
 #
 # wiki-sync.ps1 is the same script for PowerShell; keep the two in step.
 #
-# GitLab keeps a project wiki in a git repository of its own, right next to the
-# project: https://<host>/<namespace>/<project>.wiki.git. Publishing is therefore
-# an ordinary clone-commit-push, which is why this needs no API calls.
+# A GitLab wiki is a git repository of its own at
+# https://<host>/<namespace>/<project>.wiki.git, so this is a plain
+# clone-commit-push and needs no API calls.
 #
-# Credentials. CI_JOB_TOKEN may read repositories but not write to them, so it
-# cannot be used here — a push with it fails with 403. Provide instead:
+# CI_JOB_TOKEN cannot write (403). Provide instead:
 #
-#   WIKI_TOKEN        a Project Access Token (role Developer, scope
-#                     write_repository), stored as a masked CI variable
-#   WIKI_TOKEN_USER   only for a deploy token: its username (default: oauth2)
-#   WIKI_URL          overrides the whole URL, for anything unusual
+#   WIKI_TOKEN        Project Access Token, role Developer, scope
+#                     write_repository; a masked CI variable
+#   WIKI_TOKEN_USER   deploy tokens only: its username (default: oauth2)
+#   WIKI_URL          overrides the whole URL
 #
-# The token never reaches a log line or .git/config: it lives in the remote URL
-# only while the push runs, and every message prints a scrubbed URL.
+# The token never reaches a log line or .git/config -- it lives in the remote URL
+# only while the push runs.
 #
-# The wiki must be enabled for the project (Settings -> General -> Visibility).
-# A wiki that has never had a page has no repository yet and the clone fails;
-# this starts an empty one in that case, so the first run also works.
+# The wiki must be enabled (Settings -> General -> Visibility). One that has
+# never had a page has no repository yet; this starts an empty one.
 #
-# Pages that the build no longer produces are deleted, because the repository is
-# the single source: a page renamed at the source would otherwise stay published
-# forever under its old name. Nothing is lost — the wiki is a git repository, and
-# its history keeps every removed page. --no-prune leaves them alone.
+# Pages the build no longer produces are deleted, so a renamed page does not stay
+# published under its old name. The wiki's git history keeps them. --no-prune
+# leaves them alone.
 
 set -u
 
