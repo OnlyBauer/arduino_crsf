@@ -18,7 +18,7 @@ void loop() {
 }
 ```
 
-## Status: 0.1.0, not hardware-verified
+## Status: 0.2.0, not hardware-verified
 
 This library compiles for ESP32, STM32, RP2040 and SAMD, and passes its host
 suites against a mock Arduino runtime. It has **not** been run on a board, or
@@ -104,15 +104,15 @@ left to be discovered.
 
 ## Installing
 
-Not in the Library Manager index. Clone or download it into your `libraries`
-folder, with the folder named **`CRSFv3`**:
+- **Arduino IDE**: *Sketch -> Include Library -> Manage Libraries*, search for
+  **CRSFv3**.
+- **arduino-cli**: `arduino-cli lib install CRSFv3`
+- **PlatformIO**: `lib_deps = https://github.com/OnlyBauer/arduino_crsf.git`
 
-```sh
-cd ~/Documents/Arduino/libraries
-git clone https://git.bauer.pub/Bauer/arduino_crsf.git CRSFv3
-```
-
-For PlatformIO, add the repository to `lib_deps`.
+The source is at
+[github.com/OnlyBauer/arduino_crsf](https://github.com/OnlyBauer/arduino_crsf),
+which is a read-only mirror; development is on the self-hosted GitLab, so issues
+and merge requests belong there.
 
 ## Documentation
 

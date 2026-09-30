@@ -1,48 +1,50 @@
-# Zeilenenden festnageln. Die Bibliothek wird auf Windows entwickelt und in
-# Linux-Containern gebaut; ohne diese Datei hängt es an der lokalen
-# core.autocrlf-Einstellung, ob ein Commit CRLF in das Repository trägt.
+# Pin down the line endings. The library is developed on Windows and built in
+# Linux containers; without this file it depends on the local core.autocrlf
+# setting whether a commit carries CRLF into the repository.
 #
-# `* text=auto` normalisiert alles, was Git für Text hält, im Repository auf LF.
-# Die Auszeichnungen darunter nehmen die Heuristik aus dem Spiel.
+# `* text=auto` normalises everything Git considers text to LF in the
+# repository. The entries below take the heuristic out of the equation.
 
 * text=auto
 
 *.c    text eol=lf
 *.h    text eol=lf
 *.cpp  text eol=lf
+*.ino  text eol=lf
 *.md   text eol=lf
 *.yml  text eol=lf
 *.yaml text eol=lf
 *.py   text eol=lf
 *.sh   text eol=lf
-*.cmake text eol=lf
-CMakeLists.txt text eol=lf
+*.json text eol=lf
 Makefile text eol=lf
 Doxyfile text eol=lf
 VERSION  text eol=lf
+NOTICE   text eol=lf
+LICENSE  text eol=lf
+c_crsf.pin text eol=lf
+library.properties text eol=lf
 .clang-format text eol=lf
 .clang-tidy   text eol=lf
 .editorconfig text eol=lf
 .gitattributes text eol=lf
 
-# Auch .txt, und zwar aus einem konkreten Grund: tests/golden_trace.txt wird
-# byteweise mit dem verglichen, was der Lauf erzeugt. Ohne diese Zeile macht
-# core.autocrlf=true daraus im Arbeitsbaum CRLF, der Vergleich schlaegt bei
-# jedem ausser dem Entwickler fehl -- und zwar mit einer Diff-Ausgabe, die wie
-# ein echter Protokollfehler aussieht.
+# .txt too, for a concrete reason: extras/vendor/golden_trace.txt is compared
+# byte for byte against what a run produces. Without this line core.autocrlf=true
+# turns it into CRLF in the working tree, and the comparison fails for everyone
+# but the developer -- with a diff that looks like a real protocol error.
 *.txt  text eol=lf
 
-# keywords.txt braucht echte Tabulatoren; die IDE trennt daran und ignoriert
-# eine Zeile mit Leerzeichen stillschweigend.
+# keywords.txt needs real tabs; the IDE splits on them and silently ignores a
+# line that uses spaces. This entry is here only for the line endings, though --
+# .gitattributes cannot protect tabs, tools/ci.sh lint does that.
 keywords.txt text eol=lf
 
-# PowerShell erwartet CRLF.
+# PowerShell expects CRLF.
 *.ps1  text eol=crlf
 
-# Der eingebettete Kern ist eine Kopie von c_crsf und wird hier nicht
-# angefasst. Er liegt flach in src/, weil das Arduino-1.5-Format nur src/
-# selbst auf den Include-Pfad legt -- ein Unterverzeichnis wuerde Aenderungen
-# an den eingebetteten Dateien erzwingen.
+# The vendored core is a copy of c_crsf and is not touched here. It sits flat in
+# src/, because the Arduino 1.5 format puts only src/ itself on the include path
+# -- a subdirectory would force changes to the vendored files.
 src/crsf_*.h linguist-vendored
 src/crsf_*.c linguist-vendored
-.gitmodules text eol=lf

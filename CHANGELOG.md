@@ -13,9 +13,83 @@ All notable changes to this library, newest first. The format follows
 
 `library.properties` is the authority, because the Arduino Library Manager reads
 that and nothing else. The `version-matches-tag` CI job checks it against the tag
-and against `library.json`, which must agree.
+and against `library.json`, the `Doxyfile` and `VERSION`, which must all agree.
+
+## The GitHub mirror
+
+Development happens on the self-hosted GitLab; the GitHub repository
+[OnlyBauer/arduino_crsf](https://github.com/OnlyBauer/arduino_crsf) is a
+**push mirror of it, and read-only**. Never commit there: a push mirror
+force-updates its target, so anything committed on GitHub is overwritten without
+warning on the next sync. It exists because the Arduino Library Manager needs a
+repository on a host it accepts, and because the registry indexes tags, which
+the mirror carries across.
+
+Set up in GitLab under *Settings -> Repository -> Mirroring repositories*:
+
+| Field | Value |
+| --- | --- |
+| Git repository URL | `https://github.com/OnlyBauer/arduino_crsf.git` |
+| Mirror direction | Push |
+| Authentication method | Password |
+| Username | the GitHub account name |
+| Password | a GitHub personal access token |
+
+The token needs read and write permission for repository contents -- a
+fine-grained token scoped to this one repository is enough, as is a classic
+token with `repo`. Older GitLab versions take the username embedded in the URL
+(`https://user@github.com/...`) instead of in its own field.
+
+Leave *Keep divergent refs* off, so the mirror always matches this repository
+exactly. Mirroring runs on push and can be triggered by hand with *Update now*.
+Push mirroring is a free-tier feature; nothing here needs Premium.
+
+One thing to check the first time a release is tagged: GitLab's documentation
+describes branch mirroring and does not spell out tags, and the registry indexes
+tags and nothing else. So after the first `release_*` tag, confirm it actually
+appears under *Tags* on GitHub before submitting.
+
+Nothing in CI depends on the mirror, and nothing needs to be pushed to it by
+hand.
+
+## Publishing to the Arduino Library Manager
+
+The registry indexes **tags**, and reads `library.properties` out of each one, so
+a release is published by tagging it and nothing else. Two rules follow from
+that, and both are enforced by CI before a tag can be made:
+
+- the `version` field must go up for every tag -- the indexer rejects a tag whose
+  version equals one it has already indexed;
+- the tag has to be made from a commit whose `library.properties` is already
+  correct, because that file is what gets indexed, not the release notes.
+
+### Getting listed the first time
+
+1. The repository has to be public and on a host the registry accepts: GitHub,
+   GitLab or Bitbucket, with other hosts "considered on request". The
+   self-hosted instance this repository is developed on is not one of them, so
+   it is mirrored to
+   [github.com/OnlyBauer/arduino_crsf](https://github.com/OnlyBauer/arduino_crsf),
+   and that is the URL to submit. `url` in `library.properties` points at the
+   mirror too, because rule LP042 fails the submission if it is not reachable.
+2. The `name` field must not already be in use in the index, case-insensitively.
+   This is the usual reason a submission is turned away. `CRSFv3` was free when
+   0.2.0 was prepared -- the index holds `CRSF`, `AlfredoCRSF` and
+   `CRSFforArduino`, none of which collide. The `arduino-lint` CI job checks it
+   in `submit` mode (rule LP017), so it is answered here rather than in the
+   registry's pull request.
+3. Open a pull request against
+   [arduino/library-registry](https://github.com/arduino/library-registry)
+   adding the repository URL to `repositories.txt`. A bot validates it and
+   comments; on success the library appears in the index within a day.
+4. **Then change `LIBRARY_MANAGER_MODE` in `.gitlab-ci.yml` from `submit` to
+   `update`.** Left on `submit`, the job starts failing against the library's
+   own new index entry. Expect `update` to fail with LP018 for up to a day
+   after that, until the index is rebuilt with the new entry; it clears itself.
 
 ## [Unreleased]
+
+## [0.2.0] — 2026-09-30
 
 ### Changed
 
@@ -28,6 +102,54 @@ and against `library.json`, which must agree.
   ("esp_crsf — CRSFv3 for ESP-IDF", "stm_crsf — CRSFv3 for STM32"), at the cost of
   that one shared word. This is a breaking change against the tagged `0.1.0`
   release: a sketch must change both its `#include` and its class name.
+- The wiki is no longer published by CI; `tools/wiki-sync.sh --push` publishes it
+  by hand.
+- `.clang-format` sets `AllowShortFunctionsOnASingleLine: Inline` and
+  `AccessModifierOffset: -4`, the only place this repository's formatting differs
+  from its siblings. clang-format has no separate C language — `.c` and `.cpp`
+  are both `Cpp` — so there is no language-scoped section to put it in, and this
+  repository's own code is entirely C++. With the inherited `None`, each of the
+  fifteen trivial accessors in `CrsfPort.h` became a four-line block, which is
+  right for C and makes the library's main header hard to read.
+- **Prepared the library for the Arduino Library Manager.** `url` in
+  `library.properties` and `repository.url` in `library.json` now point at the
+  GitHub mirror [OnlyBauer/arduino_crsf](https://github.com/OnlyBauer/arduino_crsf)
+  rather than the self-hosted GitLab: the registry only accepts repositories on
+  GitHub, GitLab.com or Bitbucket, and rule LP042 fails a submission whose `url`
+  is unreachable. See *The GitHub mirror* and *Publishing to the Arduino Library
+  Manager* above for the mirror setup and the submission procedure.
+- The `arduino-lint` CI job runs in `--library-manager submit` mode instead of
+  `false`, and goes through `tools/ci.sh` rather than calling the binary
+  directly. `false` checked nothing about the registry; `submit` adds LP017,
+  which fails if the library's name is already taken — the likeliest reason a
+  submission is turned away, and worth learning here rather than in the
+  registry's pull request. Routing it through `ci.sh` lints a copy of the
+  *tracked* files, because rule LS007 fails on any `.exe` and both `build_tests/`
+  and `build_wiki/` are full of untracked build output on a Windows machine.
+  `tools/ci.sh` gained a matching `arduino-lint` stage, so the check is
+  reproducible locally.
+- **Every comment and message in the repository is now in English.**
+  `.gitlab-ci.yml`, `.clang-format`, `.clang-tidy`, `.gitattributes` and
+  `.editorconfig` were German; the four sibling repositories and all prose
+  documentation were already English, so the configuration files were the odd
+  ones out. No setting changed — only comments and the `version-matches-tag`
+  job's output strings.
+- `NOTICE` described `esp_crsf` and a `tbs-crsf-spec/` submodule that does not
+  exist in this repository; it had been copied from the ESP-IDF port unedited.
+  It now describes this library, and states the vendored c_crsf core's
+  provenance.
+- README `## Installing` gives the three real routes (Arduino IDE, `arduino-cli`,
+  PlatformIO) and names the mirror as read-only, instead of telling the reader to
+  clone into `libraries/` by hand because the library is "not in the Library
+  Manager index".
+- The `version-matches-tag` job also checks `VERSION`, which was the one copy of
+  the version number nothing verified.
+- `.editorconfig` applies the four-space rule to `.cpp` and `.ino` as well as
+  `.c`/`.h`, pins `keywords.txt` to real tabs, and drops an inherited
+  `[tbs-crsf-spec/**]` section for a directory this repository does not have.
+  `.gitattributes` gained `*.ino`, `*.json` and `library.properties`, dropped the
+  CMake and `.gitmodules` entries that belong to other ports, and its
+  `golden_trace.txt` note now names the file's actual path in `extras/vendor/`.
 
 ### Added
 
@@ -53,18 +175,6 @@ and against `library.json`, which must agree.
   from the lines directly preceding its summary line and attached as that
   testcase's `<failure>` body. Coarser than one `<testcase>` per assertion,
   but nothing before this showed up in the Tests tab at all.
-
-### Changed
-
-- The wiki is no longer published by CI; `tools/wiki-sync.sh --push` publishes it
-  by hand.
-- `.clang-format` sets `AllowShortFunctionsOnASingleLine: Inline` and
-  `AccessModifierOffset: -4`, the only place this repository's formatting differs
-  from its siblings. clang-format has no separate C language — `.c` and `.cpp`
-  are both `Cpp` — so there is no language-scoped section to put it in, and this
-  repository's own code is entirely C++. With the inherited `None`, each of the
-  fifteen trivial accessors in `CrsfPort.h` became a four-line block, which is
-  right for C and makes the library's main header hard to read.
 
 ### Fixed
 

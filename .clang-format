@@ -1,17 +1,16 @@
-# Formatvorgabe für esp_crsf, geprüft von tools/ci.sh lint und der Stufe lint
-# in .gitlab-ci.yml. clang-format liegt der ESP-IDF-Installation bereits bei
-# (esp-clang/*/esp-clang/bin), es ist also keine zusätzliche Abhängigkeit.
+# Format rules for CRSFv3, checked by tools/ci.sh lint and the lint stage in
+# .gitlab-ci.yml.
 #
-# Diese Datei beschreibt den Stil, den das Repository ohnehin schon hatte; sie
-# führt keinen neuen ein. Gemessen wurde gegen die fertigen Standardstile, und
-# alle passen schlecht: LLVM und Google ändern rund 130 % der Zeilen, GNU und
-# Mozilla über 160 %, WebKit als bester noch 28 %. Mit den Einstellungen unten
-# blieben 15 %, und davon entfielen zwei Fünftel auf die zwei handausgerichteten
-# Tabellen in crsf_crc.c und crsf_protocol.h — beide sind jetzt mit
-# `clang-format off` ausgenommen, weil ihre Ausrichtung Absicht ist.
+# This file describes the style the repository already had; it does not
+# introduce a new one. It was measured against the ready-made standard styles,
+# and all of them fit badly: LLVM and Google change around 130 % of the lines,
+# GNU and Mozilla over 160 %, WebKit as the best still 28 %. With the settings
+# below 15 % remained, and two fifths of that fell on the two hand-aligned
+# tables in crsf_crc.c and crsf_protocol.h -- both are now excluded with
+# `clang-format off`, because their alignment is deliberate.
 #
-# Der Stil in einem Satz: Linux-Klammern, vier Leerzeichen, Stern am Namen,
-# kein automatischer Umbruch.
+# The style in one sentence: Linux braces, four spaces, star on the name, no
+# automatic wrapping.
 
 BasedOnStyle: LLVM
 
@@ -19,62 +18,60 @@ IndentWidth: 4
 TabWidth: 4
 UseTab: Never
 
-# Kein Zeilenlimit, also bricht clang-format nichts um, was schon umgebrochen
-# ist. Das ist der wichtigste Schalter hier: mit einem Limit formatiert das
-# Werkzeug jeden Ausdruck neu nach eigenem Geschmack und der Umbau wird groß,
-# ohne dass eine Zeile dadurch besser lesbar würde. Die Zeilenlänge bleibt
-# damit Sache des Autors — der Bestand liegt bis auf zwei Dateien unter 100
-# Spalten und soll das auch bleiben.
+# No column limit, so clang-format does not re-wrap anything that is already
+# wrapped. This is the most important switch here: with a limit, the tool
+# reformats every expression to its own taste and the diff grows large without
+# a single line becoming more readable. Line length stays the author's business
+# -- the existing code is under 100 columns but for two files, and should stay
+# that way.
 ColumnLimit: 0
 
-# Funktionsrumpf-Klammer auf eigener Zeile, Kontrollfluss-Klammer dahinter.
+# Function body brace on its own line, control-flow brace on the same line.
 BreakBeforeBraces: Linux
 
-# uint8_t *out, nicht uint8_t* out.
+# uint8_t *out, not uint8_t* out.
 PointerAlignment: Right
 ReferenceAlignment: Right
 
-# Die Include-Reihenfolge ist gewollt (eigener Header zuerst, dann System),
-# clang-format soll sie nicht alphabetisch umsortieren.
+# The include order is deliberate (own header first, then system); clang-format
+# must not re-sort it alphabetically.
 SortIncludes: Never
 
-# Auch ein einzeiliger Rumpf gehört bei einer Funktion auf eigene Zeilen; die
-# kurze Form `if (!r) { return false; }` bei Wächtern bleibt dagegen erlaubt.
-# Abweichung von den drei Schwesterprojekten, und die einzige.
+# A one-line body belongs on its own lines for a function too; the short form
+# `if (!r) { return false; }` for guards stays allowed. A deviation from the
+# three sister projects, and the only one.
 #
-# clang-format kennt kein eigenes "C": .c und .cpp werden beide als Cpp
-# formatiert, eine sprachabhaengige Sektion gibt es also nicht. Der eigene
-# Code dieses Repositories ist vollstaendig C++ -- der eingebettete Kern wird
-# ohnehin nicht geprueft -- weshalb die Einstellung hier ohne Nebenwirkung
-# umgestellt werden kann.
+# clang-format has no separate "C": .c and .cpp are both formatted as Cpp, so
+# there is no language-dependent section. This repository's own code is
+# entirely C++ -- the vendored core is not checked anyway -- which is why the
+# setting can be changed here without side effects.
 #
-# Mit None wird aus jedem der rund fuenfzehn trivialen Accessoren in
-# CRSFv3.h ein Vierzeiler. Das ist fuer C richtig, wo es keine gibt, und
-# macht ausgerechnet die Datei unleserlich, die das Aushaengeschild der
-# Bibliothek ist. Inline laesst nur *in* einer Klasse definierte Kurzmethoden
-# auf einer Zeile; freistehende Funktionen bleiben aufgeklappt wie ueberall.
+# With None, each of the roughly fifteen trivial accessors in CRSFv3.h becomes
+# a four-liner. That is right for C, which has none, and makes exactly the file
+# unreadable that is the library's shop window. Inline leaves only short
+# methods defined *inside* a class on one line; free-standing functions stay
+# expanded as everywhere else.
 AllowShortFunctionsOnASingleLine: Inline
 
-# public:/private: auf der Ebene der Klasse statt zwei Spalten eingerueckt.
+# public:/private: at class level rather than indented by two columns.
 AccessModifierOffset: -4
 AllowShortBlocksOnASingleLine: Always
 AllowShortIfStatementsOnASingleLine: WithoutElse
 AllowShortLoopsOnASingleLine: false
 AllowShortCaseLabelsOnASingleLine: false
 
-# (uint8_t)x, nicht (uint8_t) x.
+# (uint8_t)x, not (uint8_t) x.
 SpaceAfterCStyleCast: false
 
-# case auf der Höhe des switch, wie im Bestand.
+# case at the level of the switch, as in the existing code.
 IndentCaseLabels: false
 IndentGotoLabels: false
 IndentPPDirectives: None
 
-# Ausrichtung nicht erzwingen: der Bestand richtet `=` in manchen Blöcken
-# bewusst aus und in anderen bewusst nicht. Ein globales Consecutive hat den
-# Umbau messbar vergrößert (15 % -> 17 %), weil es die nicht ausgerichteten
-# Stellen umschreibt. Wo Ausrichtung Absicht ist, steht sie unter
-# `clang-format off`.
+# Do not force alignment: the existing code aligns `=` deliberately in some
+# blocks and deliberately not in others. A global Consecutive grew the diff
+# measurably (15 % -> 17 %), because it rewrites the unaligned places. Where
+# alignment is intended, it sits under `clang-format off`.
 AlignConsecutiveAssignments: None
 AlignConsecutiveDeclarations: None
 AlignConsecutiveMacros: None
@@ -83,15 +80,15 @@ AlignEscapedNewlines: Left
 AlignAfterOpenBracket: Align
 AlignOperands: Align
 
-# Kommentare nicht neu umbrechen. Die Dateien sind stark kommentiert, oft mit
-# Absätzen, Aufzählungen und Spaltentabellen darin; ein Reflow zerlegt die.
+# Do not re-wrap comments. The files are heavily commented, often with
+# paragraphs, lists and column tables inside them; a reflow takes those apart.
 ReflowComments: false
 
-# Argumente und Parameter dicht packen statt einen pro Zeile.
+# Pack arguments and parameters densely rather than one per line.
 BinPackArguments: true
 BinPackParameters: true
 
-# Leerzeile am Blockanfang entfernen, mehrfache Leerzeilen auf eine begrenzen.
+# Remove a blank line at the start of a block, collapse multiple blank lines.
 KeepEmptyLinesAtTheStartOfBlocks: false
 MaxEmptyLinesToKeep: 1
 

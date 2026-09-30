@@ -1,7 +1,7 @@
-# Editor-Vorgaben, passend zu .clang-format. Diese Datei erzwingt nichts — sie
-# sorgt nur dafür, dass ein Editor die Regeln schon beim Tippen einhält, statt
-# dass tools/ci.sh lint sie hinterher bemängelt. Von VS Code, CLion und
-# Visual Studio ohne Erweiterung gelesen.
+# Editor defaults matching .clang-format. This file enforces nothing -- it only
+# makes an editor keep to the rules while you type, rather than having
+# tools/ci.sh lint complain about them afterwards. Read by VS Code, CLion, the
+# Arduino IDE 2 and Visual Studio without an extension.
 
 root = true
 
@@ -11,7 +11,7 @@ end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-[*.{c,h}]
+[*.{c,h,cpp,ino}]
 indent_style = space
 indent_size = 4
 
@@ -24,7 +24,12 @@ indent_style = space
 indent_size = 4
 
 [{Makefile,*.mk}]
-# Make verlangt echte Tabulatoren am Anfang einer Rezeptzeile.
+# Make requires real tabs at the start of a recipe line.
+indent_style = tab
+
+[keywords.txt]
+# The Arduino IDE's parser splits on real tabs and silently ignores a line that
+# uses spaces.
 indent_style = tab
 
 [*.ps1]
@@ -33,12 +38,5 @@ indent_style = space
 indent_size = 2
 
 [*.md]
-# Zwei abschließende Leerzeichen sind in Markdown ein harter Zeilenumbruch.
+# Two trailing spaces are a hard line break in Markdown.
 trim_trailing_whitespace = false
-
-[tbs-crsf-spec/**]
-# Fremdes Submodul, nicht anfassen.
-charset = unset
-end_of_line = unset
-insert_final_newline = unset
-trim_trailing_whitespace = unset

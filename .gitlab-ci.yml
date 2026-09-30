@@ -1,24 +1,23 @@
-# CI für die Arduino-Bibliothek CRSFv3.
+# CI for the Arduino library CRSFv3.
 #
-# Vier Stufen, von schnell nach langsam:
+# Five stages, fast to slow:
 #
-#   lint     Formatierung, Whitespace, statische Analyse und die Prüfung, dass
-#            jede Stelle, an der eine Version steht, dieselbe nennt.
-#   test     Host-Unit-Tests aus tests/ — reiner gcc, keine Zielplattform, läuft
-#            in Sekunden und fängt praktisch alle Protokollfehler ab.
-#   docs     Doxygen. Das Doxyfile hat WARN_AS_ERROR = FAIL_ON_WARNINGS, der Job
-#            schlägt also fehl, sobald eine öffentliche Deklaration
-#            undokumentiert ist oder ein @param nicht mehr zur Signatur passt.
-#   release  Erzeugt aus einem annotierten Tag ein GitLab-Release-Objekt.
+#   lint     Formatting, whitespace, static analysis, the Arduino specification
+#            via arduino-lint, and the check that every place a version is
+#            written says the same one.
+#   test     Host unit tests from tests/ -- plain gcc against a mock Arduino
+#            runtime, no target platform, runs in seconds.
+#   build    Compiles every example for each of the four supported
+#            architectures with arduino-cli. This is the stage that catches a
+#            sketch which no longer builds on a board nobody has to hand.
+#   docs     Doxygen. The Doxyfile has WARN_AS_ERROR = FAIL_ON_WARNINGS, so the
+#            job fails as soon as a public declaration is undocumented or an
+#            @param no longer matches the signature.
+#   release  Turns an annotated tag into a GitLab release object.
 #
-# Es gibt hier bewusst keine build-Stufe. Diese Bibliothek hat keine
-# Zielplattform: was sie braucht, ist ein C11-Compiler, und den benutzt die
-# test-Stufe bereits. Ob sie sich für einen ESP32, ein STM32 oder ein Arduino
-# übersetzen lässt, prüfen die jeweiligen Port-Repositories — dort gehört es
-# hin, denn dort steht auch die Toolchain.
-#
-# tbs-crsf-spec ist nur Referenzdokumentation und wird für keinen Job gebraucht.
-# GIT_SUBMODULE_STRATEGY bleibt deshalb auf dem Standard none.
+# The protocol itself is not tested here. It is c_crsf, vendored into src/ and
+# checked in its own repository; the vendor-unmodified job proves the copy is
+# unchanged. What this repository tests is the Arduino layer on top of it.
 
 stages:
   - lint
@@ -28,10 +27,10 @@ stages:
   - release
 
 variables:
-  # Flacher Klon, das reicht für alles hier.
+  # Shallow clone, enough for everything here.
   GIT_DEPTH: "20"
 
-# Keine doppelten Pipelines: bei offenem Merge Request nur die MR-Pipeline.
+# No duplicate pipelines: with an open merge request, only the MR pipeline.
 workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -41,17 +40,17 @@ workflow:
 
 # --- lint ---------------------------------------------------------------------
 
-# Formatierung und statische Analyse.
+# Formatting and static analysis.
 #
-# Warum das Image auf eine Hauptversion festgenagelt ist: die Ausgabe von
-# clang-format ändert sich zwischen Hauptversionen. Läuft hier eine andere als
-# lokal, wird dieser Job rot, obwohl `tools/ci.sh lint` auf dem Rechner grün
-# war — und niemand kann es nachvollziehen.
+# Why the image is pinned to a major version: clang-format's output changes
+# between major versions. If a different one runs here than locally, this job
+# goes red although `tools/ci.sh lint` was green on the machine -- and nobody
+# can reproduce it.
 #
-# Der Job ruft tools/ci.sh auf und nicht die Werkzeuge direkt: sonst gibt es
-# zwei Implementierungen derselben Prüfung, die auseinanderlaufen. --strict
-# macht aus einem fehlenden Werkzeug einen Fehlschlag statt eines SKIP, denn in
-# CI ist ein stillschweigend übersprungener Lint wertlos.
+# The job calls tools/ci.sh rather than the tools directly: otherwise there are
+# two implementations of the same check, and they drift. --strict turns a
+# missing tool into a failure rather than a SKIP, because in CI a silently
+# skipped lint is worth nothing.
 lint:
   stage: lint
   image: silkeh/clang:20
@@ -60,21 +59,23 @@ lint:
   script:
     - bash tools/ci.sh lint --strict
 
-# Eine Version steht an vier Stellen; alle vier müssen dasselbe sagen.
+# A version appears in several places; all of them must say the same thing.
 #
-# Tag-Schema:
+# Tag scheme:
 #   release_X.Y.Z          -> VERSION: X.Y.Z
 #   prerelease_X.Y.Z_dev   -> VERSION: X.Y.Z-dev
 #
-# Der Tag-Name ist eine Git-Referenz und darf aussehen, wie er will. Die Version
-# darf das nicht: Semver hängt ein Vorabkennzeichen mit Bindestrich an, also ist
-# "0.4.0_dev" keine gültige Version, obwohl "prerelease_0.4.0_dev" ein völlig
-# brauchbarer Tag ist.
+# The tag name is a git reference and may look however it likes. The version may
+# not: semver appends a pre-release marker with a hyphen, so "0.4.0_dev" is not
+# a valid version, although "prerelease_0.4.0_dev" is a perfectly usable tag.
 #
-# Warum überhaupt geprüft: "getaggt als X, in der Datei steht noch Y" ist der
-# klassische Release-Fehler, und er fällt erst auf, wenn jemand die Bibliothek
-# zieht. Das Doxyfile ist ausdrücklich mit dabei — genau dort ist die Version in
-# esp_crsf unbemerkt auf 0.3.0 stehengeblieben, weil sie niemand gelesen hat.
+# Why check at all: "tagged as X, the file still says Y" is the classic release
+# mistake, and it only shows up once somebody pulls the library. For this
+# library it is worse than usual, because library.properties is exactly what the
+# Arduino Library Manager reads out of the tag -- a wrong version there gets
+# published, not merely left wrong locally. The Doxyfile is explicitly included:
+# that is precisely where the version in esp_crsf silently stayed at 0.3.0,
+# because nobody read it.
 version-matches-tag:
   stage: lint
   image: alpine:3.20
@@ -84,7 +85,7 @@ version-matches-tag:
     - |
       set -eu
 
-      # X.Y.Z: drei Komponenten, alle rein numerisch, nichts dahinter.
+      # X.Y.Z: three components, all purely numeric, nothing after them.
       is_core() {
         IFS=. read -r a b c extra <<INNER
       $1
@@ -105,37 +106,38 @@ version-matches-tag:
           core=${tag#prerelease_}
           core=${core%_dev}
           [ "$tag" = "prerelease_${core}_dev" ] || {
-            echo "Tag '$tag': erwartet wird prerelease_X.Y.Z_dev"; exit 1; }
+            echo "Tag '$tag': expected prerelease_X.Y.Z_dev"; exit 1; }
           want="$core-dev"
           ;;
         *)
-          echo "Tag '$tag' passt in kein Schema."
-          echo "Erlaubt: release_X.Y.Z oder prerelease_X.Y.Z_dev"
+          echo "Tag '$tag' matches no scheme."
+          echo "Allowed: release_X.Y.Z or prerelease_X.Y.Z_dev"
           exit 1
           ;;
       esac
       is_core "$core" || {
-        echo "Tag '$tag': X.Y.Z muss aus drei Zahlen bestehen, gelesen wurde '$core'"
+        echo "Tag '$tag': X.Y.Z must be three numbers, read '$core'"
         exit 1; }
 
       fail=0
-      check() {  # name, gelesener Wert
+      check() {  # name, value read
         echo "  $1: $2"
-        [ "$2" = "$want" ] || { echo "    ...erwartet wurde '$want'"; fail=1; }
+        [ "$2" = "$want" ] || { echo "    ...expected '$want'"; fail=1; }
       }
 
       echo "Tag:      $tag"
-      echo "erwartet: $want"
+      echo "expected: $want"
       have_p=$(sed -n 's/^version=//p' library.properties)
       have_j=$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' library.json)
       check "library.properties" "$have_p"
       check "library.json      " "$have_j"
       check "Doxyfile          " "$(sed -n 's/^PROJECT_NUMBER *= *//p' Doxyfile | tr -d '"[:space:]')"
-      [ "$fail" -eq 0 ] || { echo; echo "Version und Tag stimmen nicht überein."; exit 1; }
-      echo "Alle Versionsangaben stimmen mit dem Tag überein."
+      check "VERSION           " "$(tr -d '[:space:]' < VERSION)"
+      [ "$fail" -eq 0 ] || { echo; echo "Version and tag disagree."; exit 1; }
+      echo "Every version matches the tag."
 
-# Der eingebettete Kern darf hier nicht bearbeitet werden. Verglichen wird der
-# Git-Baum-Hash aus c_crsf.pin.
+# The vendored core must not be edited here. What is compared is the git tree
+# hash from c_crsf.pin.
 vendor-unmodified:
   stage: lint
   image: alpine:3.20
@@ -144,33 +146,44 @@ vendor-unmodified:
   script:
     - bash tools/sync_core.sh --check
 
-# arduino-lint prueft library.properties, den src/-Aufbau und die Regel
-# examples/<Name>/<Name>.ino -- also genau die drei Dinge, die still kaputtgehen
-# und die man sonst erst von einem Benutzer erfaehrt.
+# arduino-lint checks library.properties, the src/ layout and the
+# examples/<Name>/<Name>.ino rule: the things that break quietly.
 #
-# --library-manager false, nicht update oder submit: beide Modi pruefen gegen
-# den zentralen Registry-Eintrag, den es fuer diese Bibliothek nicht gibt --
-# sie ist laut README bewusst nicht dort gelistet. "update" setzt einen
-# *existierenden* Eintrag voraus und schlaegt ohne ihn hart fehl (Regel
-# LP018, "Library name ... not found in the Library Manager index"); das war
-# hier scharfgestellt und ist in CI genau so gescheitert. "submit" waere die
-# richtige Wahl, sobald eine Aufnahme in die Registry tatsaechlich angestrebt
-# wird; bis dahin behauptet false nichts, was nicht zutrifft, und prueft
-# trotzdem alles, was unabhaengig vom Registry-Status gilt.
+# LIBRARY_MANAGER_MODE has to be changed once, by hand, when the library is
+# accepted into the registry. The two modes check opposite things:
+#
+#   submit   Not in the index yet. LP017 fails if the name is already taken,
+#            which is the likeliest reason a submission is turned away. That is
+#            what it is set to now.
+#   update   In the index. LP018 fails if the name is *not* found, catching a
+#            rename the registry does not allow, and --compliance strict
+#            promotes LP022 (tag ahead of the version field) to an error.
+#
+# Left on submit after acceptance, LP017 fires against our own index entry.
+# After switching to update, LP018 keeps failing for up to a day, until the
+# index has actually been rebuilt with the new entry; it clears itself.
+#
+# The job calls tools/ci.sh, which lints a copy of the tracked files rather than
+# the checkout: rule LS007 fails on any .exe, and build_tests/ is full of them
+# on a Windows machine -- build_wiki/ additionally holds a whole nested git
+# clone of the wiki.
 arduino-lint:
   stage: lint
   image: debian:bookworm-slim
+  variables:
+    LIBRARY_MANAGER_MODE: submit
   before_script:
     - apt-get update -qq
-    - apt-get install -y -qq --no-install-recommends curl ca-certificates
+    # git and tar: ci.sh copies the tracked files out with them.
+    - apt-get install -y -qq --no-install-recommends curl ca-certificates git tar
     - curl -fsSL https://raw.githubusercontent.com/arduino/arduino-lint/main/etc/install.sh | BINDIR=/usr/local/bin sh
   script:
-    - arduino-lint --compliance strict --library-manager false --recursive
+    - bash tools/ci.sh arduino-lint --strict
 
 # --- test ---------------------------------------------------------------------
 
-# Die Suiten aus tests/Makefile. -Werror ist dort schon gesetzt, eine Warnung
-# bricht den Build also ohnehin ab.
+# The suites from tests/Makefile. -Werror is already set there, so a warning
+# breaks the build in any case.
 unit-tests:
   stage: test
   image: gcc:14
@@ -188,10 +201,10 @@ unit-tests:
       junit: build_tests/junit.xml
     expire_in: 1 week
 
-# Die Fuzz-Suite prüft Invarianten und Ausgabegrenzen, aber ein Lesezugriff
-# außerhalb eines Puffers fällt nur unter ASan auf. Genau dafür ist das
-# sanitize-Target im Makefile gedacht — hier gibt es eine Toolchain, die es kann.
-# Lokal auf Cygwin gibt es sie nicht, deshalb ist es ein eigenes Target.
+# The suites check invariants and output bounds, but a read outside a buffer
+# only shows up under ASan. That is what the sanitize target in the Makefile is
+# for -- here there is a toolchain that can do it. Locally on Cygwin there is
+# not, which is why it is a target of its own.
 unit-tests-sanitized:
   stage: test
   image: gcc:14
@@ -203,14 +216,14 @@ unit-tests-sanitized:
 
 # --- build --------------------------------------------------------------------
 
-# Die Beispiele fuer vier Architekturen uebersetzen.
+# Compile the examples for four architectures.
 #
-# --library . baut gegen den Arbeitsbaum, ohne vorher in ein Sketchbook zu
-# installieren; ohne das findet arduino-cli die Bibliothek nicht und die
-# Beispiele scheitern aus dem falschen Grund.
+# --library . builds against the working tree without installing into a
+# sketchbook first; without it arduino-cli does not find the library and the
+# examples fail for the wrong reason.
 #
-# Der Cache ist nicht optional: der esp32-Core ist rund 250 MB, und ohne ihn
-# laedt jede Matrix-Zelle alles neu.
+# The cache is not optional: the esp32 core is around 250 MB, and without it
+# every matrix cell downloads everything again.
 build-examples:
   stage: build
   image: debian:bookworm-slim
@@ -267,20 +280,19 @@ doxygen:
   script:
     - doxygen Doxyfile
 
-# GitLab Pages: die generierte API-Dokumentation von main veröffentlichen.
+# GitLab Pages: publish the generated API documentation from main.
 #
-# Blockiert die Pipeline nicht, und zwar aus einem Grund, der nichts mit diesem
-# Repository zu tun hat: der nginx vor der Instanz nimmt 1 MB pro Request an,
-# das public-Artefakt ist größer, und der Upload endet mit "413 Request Entity
-# Too Large". Pages wird ausschließlich über dieses Artefakt befüllt, es lässt
-# sich also nicht wegoptimieren. Sobald das Limit oben ist, veröffentlicht der
-# Job von selbst:
+# Does not block the pipeline, for a reason that has nothing to do with this
+# repository: the nginx in front of the instance accepts 1 MB per request, the
+# public artifact is larger, and the upload ends with "413 Request Entity Too
+# Large". Pages is filled exclusively through that artifact, so it cannot be
+# optimised away. As soon as the limit is raised, the job publishes by itself:
 #
 #   nginx['client_max_body_size'] = '0'   in /etc/gitlab/gitlab.rb
 #   + gitlab-ctl reconfigure
 #
-# Dasselbe Limit deckelt übrigens git-push über HTTPS und jeden Anhang in der
-# Weboberfläche. Wenn es fällt, gehört dieses allow_failure weg.
+# The same limit caps git-push over HTTPS and every attachment in the web UI, by
+# the way. When it goes, this allow_failure should go with it.
 pages:
   stage: docs
   image: alpine:3.20
@@ -302,25 +314,23 @@ pages:
 
 # --- release ------------------------------------------------------------------
 
-# Erzeugt aus einem annotierten Tag ein GitLab-Release-Objekt.
+# Turns an annotated tag into a GitLab release object.
 #
-# Warum überhaupt: vorher war ein Release ein Tag und sonst nichts. Wer die
-# Bibliothek zieht, sieht unter Releases eine leere Seite und muss den Changelog
-# im Repository suchen. Das Release-Objekt ist die Stelle, an der GitLab, die API
-# und jede Integration nachschlagen.
+# Why at all: before, a release was a tag and nothing else. Anyone pulling the
+# library sees an empty page under Releases and has to go looking for the
+# changelog in the repository. The release object is where GitLab, the API and
+# every integration look it up.
 #
-# Die Beschreibung kommt aus CHANGELOG.md und nicht aus der Tag-Nachricht: der
-# Changelog wird im Merge Request gelesen und geprüft, eine Tag-Nachricht nicht.
-# tools/changelog_section.py schneidet den Abschnitt heraus und endet mit einem
-# Fehler, wenn es ihn nicht gibt — man kann also nicht taggen, ohne den Eintrag
-# geschrieben zu haben.
+# The description comes from CHANGELOG.md and not from the tag message: the
+# changelog is read and reviewed in the merge request, a tag message is not.
+# tools/changelog_section.py cuts the section out and exits with an error if it
+# does not exist -- so you cannot tag without having written the entry.
 #
-# Nur release_*, nicht prerelease_*: ein Release ist etwas, das man installiert.
+# Only release_*, not prerelease_*: a release is something you install.
 #
-# Keine hochgeladenen Assets, sondern Links auf Archive, die GitLab auf Anfrage
-# selbst erzeugt. Das ist kein Stilentscheid: ein Upload liefe in dasselbe
-# 1-MB-Limit wie pages oben. Ein Quellarchiv des Tags enthält die Bibliothek
-# ohnehin vollständig.
+# No uploaded assets, but links to archives GitLab generates on request. That is
+# not a style decision: an upload would run into the same 1 MB limit as pages
+# above. A source archive of the tag contains the library in full anyway.
 release:
   stage: release
   image: registry.gitlab.com/gitlab-org/release-cli:latest

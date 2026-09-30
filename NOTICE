@@ -1,4 +1,4 @@
-esp_crsf — CRSFv3 protocol component for ESP-IDF
+arduino_crsf — CRSFv3, the TBS Crossfire protocol as an Arduino library
 Copyright 2026 Maximilian Bauer
 
 Licensed under the Apache License, Version 2.0. See the LICENSE file for the
@@ -7,18 +7,21 @@ redistributions.
 
 --------------------------------------------------------------------------------
 
-Reference documentation, not part of the compiled component:
+Third-party code: none. The protocol implementation in src/crsf_*.c and
+src/crsf_*.h is c_crsf, by the same author and under the same licence, vendored
+flat into src/ so that the Arduino build finds it. It is not modified here; the
+commit it was taken from is pinned in c_crsf.pin and checked by the
+vendor-unmodified CI job, and its own LICENSE, NOTICE and VERSION are kept
+alongside it in extras/vendor/.
 
-  tbs-crsf-spec/ is a git submodule containing the CRSF V3 Protocol
-  Specification, © 2020 TBS Avionics Co LTD, licensed under Creative Commons
-  Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).
+tests/test_util.h is carried over unchanged from the same project.
 
-  That document is aggregated alongside this software, not incorporated into
-  it. No source file in this component is copied or adapted from its text; the
-  code implements the protocol the document describes, and copyright covers the
-  document's expression rather than the protocol itself. The submodule is not
-  required to build, and its ShareAlike term therefore does not extend to this
-  component.
+--------------------------------------------------------------------------------
 
-  Comments in the sources cite that specification by line number, for example
-  "crsf.md:527". Those are references, not quotations.
+The CRSF V3 Protocol Specification, © 2020 TBS Avionics Co LTD, is licensed
+under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).
+That document is not redistributed here in any form. Comments in the sources
+cite it by line number, for example "crsf.md:527"; those are references, not
+quotations. No source file is copied or adapted from its text — the code
+implements the protocol the document describes, and copyright covers the
+document's expression rather than the protocol itself.
