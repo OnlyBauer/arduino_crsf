@@ -79,6 +79,10 @@ and against `library.json`, which must agree.
   themselves are unaffected, the source is one click away in the repository,
   and the sidebar tree still navigates the docs without a search box.
   Verified the compressed artifact drops from 1.3 MB to 936 KB.
+- The `pages` job put the generated HTML straight at `public/`, which GitLab
+  Pages serves at the project's bare Pages URL rather than any sub-path. It
+  now moves the output to `public/docs/` instead, so the docs are reachable
+  at `<pages-url>/docs/`.
 - The `build-examples` CI job failed for every example on
   `STMicroelectronics:stm32:Nucleo_64:pnum=NUCLEO_F411RE`, including the two
   that shipped in `0.1.0`: `undefined reference to 'Serial1'`. Never caught

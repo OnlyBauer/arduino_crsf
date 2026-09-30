@@ -291,7 +291,8 @@ pages:
     - apk add --no-cache doxygen
   script:
     - doxygen Doxyfile
-    - mv docs/html public
+    - mkdir -p public/docs
+    - mv docs/html/* public/docs/
   artifacts:
     paths:
       - public
