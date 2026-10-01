@@ -124,15 +124,18 @@ vendor-unmodified:
 # arduino-lint checks library.properties, the src/ layout and the
 # examples/<Name>/<Name>.ino rule.
 #
-# LIBRARY_MANAGER_MODE must be switched by hand once the registry accepts the
-# library. The modes check opposite things:
+# The modes check opposite things:
 #
 #   submit   Not indexed yet. LP017 fails if the name is already taken.
 #   update   Indexed. LP018 fails if the name is *not* found.
 #
-# Left on submit after acceptance, LP017 fires against our own entry. After
-# switching, LP018 fails for up to a day until the index rebuilds; it clears
-# itself.
+# Switched to update on 2026-10-01, when arduino/library-registry merged CRSFv3
+# into repositories.txt. Left on submit past that point, LP017 fires against our
+# own entry.
+#
+# Expect LP018 to fail until the index is rebuilt with that entry, a few hours
+# after acceptance. That is this switch being early, not something being wrong,
+# and it clears itself.
 #
 # ci.sh lints a copy of the tracked files: LS007 fails on any .exe, and the
 # ignored build_*/ directories are full of them.
@@ -140,7 +143,7 @@ arduino-lint:
   stage: lint
   image: debian:bookworm-slim
   variables:
-    LIBRARY_MANAGER_MODE: submit
+    LIBRARY_MANAGER_MODE: update
   before_script:
     - apt-get update -qq
     # git and tar: ci.sh copies the tracked files out with them.

@@ -89,6 +89,19 @@ that, and both are enforced by CI before a tag can be made:
 
 ## [Unreleased]
 
+### Changed
+
+- `LIBRARY_MANAGER_MODE` switched from `submit` to `update`: CRSFv3 was accepted
+  into the Arduino Library Manager registry on 2026-10-01 and
+  arduino/library-registry merged the entry into `repositories.txt`. Left on
+  `submit`, LP017 would start firing against the library's own index entry.
+
+  The `arduino-lint` job fails with LP018 ("library name not found in the
+  index") until the index is actually rebuilt with that entry, a few hours
+  after acceptance. That is this switch being early rather than anything being
+  wrong, and it clears itself. Verified that LP018 is the *only* failure: all
+  six sketches and every other rule still pass.
+
 ## [0.5.0] — 2026-10-01
 
 ### Added
