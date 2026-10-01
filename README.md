@@ -18,16 +18,23 @@ void loop() {
 }
 ```
 
-## Status: 0.3.0, not hardware-verified
+## Status: 0.3.0, verified on hardware — against itself, not against a radio
 
-This library compiles for ESP32, STM32, RP2040 and SAMD, and passes its host
-suites against a mock Arduino runtime. It has **not** been run on a board, or
-against a radio, a receiver, or any physical CRSF peer. The author has no
-Arduino hardware.
+`examples/CrsfLoopbackSelfTest` passes **9 of 9 checks on an ESP32-WROOM-32**
+with GPIO17 jumpered to GPIO16: battery, attitude and GPS frames round-trip
+through a real UART at 416666 baud, channels decode and bring the link up, the
+role guard refuses a receiving station the channel stream, the telemetry
+scheduler paces to the board's own clock, and nothing fails CRC. It passes
+identically with `CRSF_ARDUINO_MINIMAL`, so the stripped build runs and does not
+merely compile.
 
-[COMPLIANCE.md](COMPLIANCE.md) §6 says exactly what is and is not established.
-`examples/CrsfLoopbackSelfTest` closes most of the gap with one board and one
-jumper wire, and a result from it is worth sending back.
+That settles the frame layer on real silicon. It settles **nothing about a
+peer**: no ELRS or Crossfire receiver has seen these bytes, no handset has
+rendered a parameter tree, and half-duplex turnaround and signal inversion are
+untested. [COMPLIANCE.md](COMPLIANCE.md) §6 is the exact list, and
+[HARDWARE-TESTS.md](HARDWARE-TESTS.md) is the work list with results.
+
+If you have a receiver, a result is worth sending back.
 
 ## What it is
 

@@ -89,6 +89,34 @@ that, and both are enforced by CI before a tag can be made:
 
 ## [Unreleased]
 
+### Added
+
+- **Hardware verification.** `examples/CrsfLoopbackSelfTest` has been run on an
+  ESP32-WROOM-32 with GPIO17 jumpered to GPIO16, and passes 9 of 9 checks — in
+  the full build and again with `CRSF_ARDUINO_MINIMAL`, so a stripped build is
+  known to run rather than merely to compile. Bytes from this library have now
+  left a physical UART at 416666 baud and come back correct. Nothing involving a
+  peer is established: no receiver, no handset, no half-duplex.
+- [`HARDWARE-TESTS.md`](HARDWARE-TESTS.md): the list of what hardware can
+  settle, what each item needs, and what has been run, with the output recorded.
+- The self-test grew three checks beyond the three telemetry frames: the channel
+  path and the link state that follows from it, the role guard that stops a
+  receiving station emitting 0x16, and the telemetry scheduler paced against the
+  board's own `micros()` rather than a clock a host test moves by hand. The
+  scheduler check prints the count it measured, so drift shows up as a number.
+
+### Changed
+
+- `CrsfLoopbackSelfTest` names its ESP32 pins and opens the port itself, through
+  the `Stream` constructor. An ESP32's default UART pins are not the ones on a
+  dev board's silkscreen and they moved between core versions — in esp32 core
+  3.x `Serial1` is GPIO26/27 and `Serial2` is GPIO4/25, while the GPIO16/17
+  everyone remembers was core 2.x's `Serial2`. Picking a `Serial` and hoping is
+  how this fails on somebody else's board. Override with
+  `-DCRSF_LOOPBACK_TX_PIN` / `_RX_PIN`.
+- README and `COMPLIANCE.md` §6 say what the hardware run established and, at
+  more length, what it did not.
+
 ## [0.3.0] — 2026-10-01
 
 ### Added

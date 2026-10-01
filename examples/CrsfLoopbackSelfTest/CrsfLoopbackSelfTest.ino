@@ -8,11 +8,18 @@
  * no second device: one board and one jumper wire.
  *
  * WIRING
- *   Jumper Serial1's TX pin to its RX pin. Results print on Serial.
+ *   Jumper the CRSF UART's TX pin to its own RX pin. Results print on Serial.
+ *
+ *   On an ESP32 those are GPIO17 and GPIO16 by default here -- not because the
+ *   core picks them (it does not; see below) but because they are the pins this
+ *   sketch asks for. Override with -DCRSF_LOOPBACK_TX_PIN / _RX_PIN.
+ *   Elsewhere it is whatever Serial1 is wired to on your board.
  *
  * WHAT A PASS ESTABLISHES
  *   That this board's UART, at the real line rate, with real interrupt latency,
- *   carries CRSF frames correctly end to end.
+ *   carries CRSF frames correctly end to end; that the channel path and link
+ *   state work on real bytes; and that the telemetry scheduler paces against
+ *   this board's micros() rather than a clock a host test moves by hand.
  *
  * WHAT IT DOES NOT
  *   Anything about a peer. Whether a real ELRS receiver accepts a baudrate
@@ -39,10 +46,36 @@
 Uart CrsfSerial(PA10, PA9);
 #endif
 
-#if defined(ARDUINO_ARCH_STM32)
+#if defined(ARDUINO_ARCH_ESP32)
+/*
+ * An ESP32's default UART pins are not the ones printed on a dev board, and
+ * they have moved between core versions: in esp32 core 3.x Serial1 is
+ * GPIO26/27 and Serial2 is GPIO4/25, while the GPIO16/17 everyone remembers
+ * was core 2.x's Serial2. Picking a Serial and hoping is how this fails on
+ * somebody else's board.
+ *
+ * So the pins are named here and the sketch opens the port itself, using the
+ * Stream constructor -- which exists for exactly this and leaves begin() to
+ * the caller. On a WROOM-32, avoid GPIO6-11: they are wired to the flash chip.
+ */
+#ifndef CRSF_LOOPBACK_RX_PIN
+#define CRSF_LOOPBACK_RX_PIN 16
+#endif
+#ifndef CRSF_LOOPBACK_TX_PIN
+#define CRSF_LOOPBACK_TX_PIN 17
+#endif
+CRSFv3 crsf((Stream &)Serial1);
+#elif defined(ARDUINO_ARCH_STM32)
 CRSFv3 crsf(CrsfSerial);
 #else
 CRSFv3 crsf(Serial1);
+#endif
+
+/* The port the jumper is on, for writing raw bytes onto the wire. */
+#if defined(ARDUINO_ARCH_STM32)
+#define CRSF_LOOPBACK_WRITE(buf, len) CrsfSerial.write((buf), (len))
+#else
+#define CRSF_LOOPBACK_WRITE(buf, len) Serial1.write((buf), (len))
 #endif
 
 static int checks = 0;
@@ -103,7 +136,17 @@ void setup()
     while (!Serial) {
     }
     Serial.println(F("\nCRSFv3 loopback self-test"));
-    Serial.println(F("jumper Serial1 TX to Serial1 RX before running this\n"));
+
+#if defined(ARDUINO_ARCH_ESP32)
+    Serial.print(F("jumper GPIO"));
+    Serial.print(CRSF_LOOPBACK_TX_PIN);
+    Serial.print(F(" (TX) to GPIO"));
+    Serial.print(CRSF_LOOPBACK_RX_PIN);
+    Serial.println(F(" (RX) before running this\n"));
+    Serial1.begin(416666, SERIAL_8N1, CRSF_LOOPBACK_RX_PIN, CRSF_LOOPBACK_TX_PIN);
+#else
+    Serial.println(F("jumper the CRSF UART's TX to its own RX before running this\n"));
+#endif
 
     if (!crsf.begin(416666, CRSF_ROLE_RX)) {
         Serial.println(F("crsf.begin() failed"));
@@ -143,6 +186,75 @@ void setup()
     gotAny = false;
     crsf_send_gps(crsf, &gps);
     roundtrip(CRSF_TYPE_GPS, pl, n, "0x02 GPS");
+
+    /*
+     * Channels, and the link state that follows from them.
+     *
+     * This port is CRSF_ROLE_RX, so crsf_send_channels() refuses it: only the
+     * sending station drives the channel stream, and two masters on one wire is
+     * what that guard exists to prevent. Check the refusal, then put a real
+     * 0x16 on the wire the way a transmitter would -- built by hand and written
+     * straight to the UART, so it still crosses the jumper and comes back
+     * through the parser.
+     */
+    const bool linkWasDown = !crsf.linkUp();
+    crsf_channels_t ch;
+    for (int i = 0; i < CRSF_NUM_CHANNELS; i++) {
+        ch.channel[i] = (uint16_t)(172 + i * 100);
+    }
+    report(crsf_send_channels(crsf, &ch) == CRSF_ERR_INVALID_STATE,
+           "a receiving station refuses to send 0x16");
+
+    uint8_t chPl[CRSF_CHANNELS_PAYLOAD_SIZE];
+    const size_t chN = crsf_encode_channels(chPl, &ch);
+    uint8_t chFrame[CRSF_MAX_FRAME_SIZE];
+    const size_t chLen = crsf_build_frame(chFrame, CRSF_SYNC_BYTE,
+                                          CRSF_TYPE_RC_CHANNELS_PACKED,
+                                          CRSF_ADDR_BROADCAST, CRSF_ADDR_TRANSMITTER,
+                                          chPl, chN);
+    gotAny = false;
+    CRSF_LOOPBACK_WRITE(chFrame, chLen);
+
+    const uint32_t chDeadline = millis() + 100;
+    while (!gotAny && millis() < chDeadline) {
+        crsf.loop();
+    }
+    report(gotAny && gotType == CRSF_TYPE_RC_CHANNELS_PACKED, "0x16 Channels");
+
+    crsf_channels_t back;
+    const bool gotCh = crsf.channels(back);
+    report(gotCh && back.channel[0] == ch.channel[0] &&
+               back.channel[CRSF_NUM_CHANNELS - 1] == ch.channel[CRSF_NUM_CHANNELS - 1],
+           "channel values survive a real UART");
+    report(linkWasDown && crsf.linkUp(), "link comes up once channels arrive");
+
+    /*
+     * The telemetry scheduler against this board's own clock. Ten intervals of
+     * 50 ms, counted over 525 ms: a real micros(), real UART latency, no
+     * simulated time anywhere. The bounds are loose because the point is that
+     * it paces at all and does not free-run -- a scheduler that ignored the
+     * interval would emit hundreds.
+     */
+    unsigned emitted = 0;
+    gotAny = false;
+    crsf.telemetryInterval(CRSF_TYPE_BATTERY, 50);
+    crsf.publishBattery(bat);
+
+    const uint32_t until = millis() + 525;
+    while (millis() < until) {
+        crsf.loop();
+        if (gotAny) {
+            if (gotType == CRSF_TYPE_BATTERY) {
+                emitted++;
+            }
+            gotAny = false;
+        }
+    }
+    crsf.telemetryInterval(CRSF_TYPE_BATTERY, 0);
+    report(emitted >= 8 && emitted <= 13, "scheduler paces to a real clock");
+    Serial.print(F("       "));
+    Serial.print(emitted);
+    Serial.println(F(" frames in 525 ms at a 50 ms interval (expected ~10)"));
 
     crsf_parser_stats_t st;
     crsf.parserStats(st);

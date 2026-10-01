@@ -43,24 +43,29 @@ by the `vendor-unmodified` CI job. Nothing here edits it.
 
 ## 6. Not verified
 
-**Nothing in this repository has been verified against radio hardware, or
-against any hardware at all.** No byte produced by this code has left a physical
-UART. The author has no Arduino board.
+**The frame layer is verified on hardware. Nothing involving a peer is.**
+Bytes produced by this code have left a physical UART and come back correct, on
+an ESP32-WROOM-32 with GPIO17 jumpered to GPIO16 (esp32:esp32 3.3.12,
+2026-10-01): `examples/CrsfLoopbackSelfTest` passes 9 of 9 checks, in the full
+build and again with `CRSF_ARDUINO_MINIMAL`. No radio, receiver or handset has
+been involved.
 
 What *is* established, and by what:
 
 | Established | By |
 | --- | --- |
+| That frames cross a real UART at 416666 baud and arrive correct — framing, CRC, parsing, the channel path, link state, and the telemetry scheduler against a real clock | `examples/CrsfLoopbackSelfTest` on an ESP32-WROOM-32, 9 of 9 checks, full and minimal builds |
+| That a stripped build runs, not just compiles | the same, with `CRSF_ARDUINO_MINIMAL` |
 | The wrapper's logic — reading, feeding, ticking, clock widening, the write-refusal path, the channel defaults | `tests/test_arduino_port.cpp`, 43 checks against a mock Arduino runtime |
-| That the protocol layer is correct | c_crsf's 13 suites and 2624 checks, against the identical bytes this repository vendors |
-| That it compiles for four architectures | the `arduino-cli` matrix |
+| That the protocol layer is correct | c_crsf's 14 suites, against the identical bytes this repository vendors |
+| That it compiles for five architectures, AVR included | the `arduino-cli` matrix |
 | That `library.properties`, the `src/` layout and the example naming are valid | `arduino-lint --compliance strict` |
 
 What would establish the rest, in order of value:
 
 | Step | What it settles | What it needs |
 | --- | --- | --- |
-| Run `examples/CrsfLoopbackSelfTest` | that this board's UART carries CRSF frames correctly at the real line rate, with real interrupt latency | one board, one jumper wire |
+| ~~Run `examples/CrsfLoopbackSelfTest`~~ | done, 9 of 9 on an ESP32-WROOM-32 — see above and `HARDWARE-TESTS.md` | — |
 | Run `examples/CrsfRxStation` against a transmitter | that a real peer's channel stream is decoded and telemetry is accepted | an ELRS or Crossfire TX module |
 | ~~Measure with `size-avr`~~ | done: the `size-avr` job reports flash and RAM for both station sketches on `arduino:avr:nano`, and the README's table carries the measured numbers | — |
 | Browse a parameter tree from a handset | that EdgeTX / Agent Lite renders it as intended | a handset |
