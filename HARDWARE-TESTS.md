@@ -62,8 +62,8 @@ Status: **done** = run on the rig above, with the result recorded;
 
 | # | Test | Needs | Status |
 | --- | --- | --- | --- |
-| HW-11 | The golden trace reproduced on hardware, byte for byte, by the ESP-IDF port | ESP-IDF installed | |
-| HW-12 | `esp_crsf` loopback on UART2 | ESP-IDF installed | |
+| HW-11 | Every frame type, both tunnels and a parameter walk, through the ESP-IDF port | ESP-IDF installed | **done** |
+| HW-12 | `esp_crsf` loopback on UART2 | ESP-IDF installed | **done** |
 
 ### c_crsf
 
@@ -132,3 +132,28 @@ RAM figure is larger than the 2707 the same switches save on an AVR, because a
 
 `CrsfCommandsAndTunnel`, `CrsfLoopbackSelfTest`, `CrsfParameterDevice`,
 `CrsfParameterHost`, `CrsfRxStation`, `CrsfTxStation` — all OK.
+
+### HW-11 / HW-12 — `esp_crsf/examples/loopback_selftest`
+
+The ESP-IDF port on the same rig and the same jumper, ESP-IDF v6.0, ESP32-WROOM-32
+chip rev v3.1. This covers far more of the protocol than the Arduino sketch, and
+it matters here because it is **the same vendored c_crsf** that `arduino_crsf`
+carries — the frame layer, the tunnels and the parameter protocol are the same
+bytes either way.
+
+**35 passed, 0 failed.** Parser: 204 frames, 0 bad CRC, 0 bad length, 0 resyncs.
+
+- 26 telemetry frame types, 0x02 through 0xAC
+- `0x16` channels (16 intact) and `0x17` subset channels (8 at 11 bits)
+- `0x28`/`0x29` discovery — ping answered with device info
+- `0x32` Direct Command — the nested CRC validated by the parser
+- `0x3A.0x10` timing correction
+- `0xAA` MAVLink tunnel — 281 bytes over 5 chunks
+- `0x7A` MSP tunnel — 205 bytes over 4 chunks
+- `0x2B`/`0x2C` parameter walk — 4 of 4 — and a `0x2D` write applied
+
+Getting there needed two build fixes, neither of them in the protocol: c_crsf's
+standalone `CMakeLists.txt` read `VERSION` by a relative path, which ESP-IDF
+resolves against the build directory; and the esp_crsf examples pointed
+`EXTRA_COMPONENT_DIRS` at the parent of the whole repository, so every sibling
+checkout was scanned as a component.
