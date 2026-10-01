@@ -48,15 +48,10 @@ Uart CrsfSerial(PA10, PA9);
 
 #if defined(ARDUINO_ARCH_ESP32)
 /*
- * An ESP32's default UART pins are not the ones printed on a dev board, and
- * they have moved between core versions: in esp32 core 3.x Serial1 is
- * GPIO26/27 and Serial2 is GPIO4/25, while the GPIO16/17 everyone remembers
- * was core 2.x's Serial2. Picking a Serial and hoping is how this fails on
- * somebody else's board.
- *
- * So the pins are named here and the sketch opens the port itself, using the
- * Stream constructor -- which exists for exactly this and leaves begin() to
- * the caller. On a WROOM-32, avoid GPIO6-11: they are wired to the flash chip.
+ * An ESP32's default UART pins are not the ones printed on the board, and they
+ * changed between core versions. So name them here and open the port in the
+ * sketch, using the Stream constructor. Avoid GPIO6-11 on a WROOM-32: they are
+ * wired to the flash chip.
  */
 #ifndef CRSF_LOOPBACK_RX_PIN
 #define CRSF_LOOPBACK_RX_PIN 16

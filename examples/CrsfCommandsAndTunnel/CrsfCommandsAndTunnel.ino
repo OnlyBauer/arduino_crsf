@@ -16,21 +16,10 @@
 
 #include <CRSFv3.h>
 
+/* Which serial port the other device is on. See README.md for other boards.
+ * Not AVR: this sketch needs features an ATmega328P has no room for. */
 #if defined(ARDUINO_ARCH_STM32)
-/*
- * Serial1 is not usable here. Unlike ESP32, RP2040 and SAMD, the STM32 core
- * always forward-declares it (Serial.h, whenever USART1 exists) but only
- * defines it when the board's one "generic Serial" happens to be assigned to
- * USART1 -- on a Nucleo64 board that slot is USART2 (the ST-Link VCP)
- * instead, so Serial1 is a name with no object behind it. Uart is the
- * concrete class Serial1 would have been; PA9/PA10 are USART1, wired to the
- * D1/D0 pins on a Nucleo64 board's Arduino header -- adjust for a different
- * board.
- */
-Uart CrsfSerial(PA10, PA9);
-#endif
-
-#if defined(ARDUINO_ARCH_STM32)
+Uart CrsfSerial(PA10, PA9); /* USART1; this board has no usable Serial1 */
 CRSFv3 crsf(CrsfSerial);
 #else
 CRSFv3 crsf(Serial1);
@@ -166,6 +155,9 @@ static void onMsp(crsf_handle_t h, uint8_t origin, bool isResponse, const uint8_
     }
 }
 
+/* Show the next thing every three seconds. */
+CrsfEvery demo(3000);
+
 void setup()
 {
     Serial.begin(115200);
@@ -195,15 +187,14 @@ void loop()
 {
     crsf.loop();
 
-    static uint32_t last = 0;
-    if (millis() - last < 3000) {
+    if (!demo.due()) {
         return;
     }
-    last = millis();
 
-    static uint32_t tick = 0;
+    /* Six things to show, one at a time, looping round. */
+    static uint8_t step = 0;
 
-    switch (tick % 6) {
+    switch (step) {
     case 0: {
         /* Set VTX power to 25 dBm (crsf.md:1017). */
         const uint8_t dbm = 25;
@@ -273,5 +264,5 @@ void loop()
         break;
     }
 
-    tick++;
+    step = (step + 1) % 6;
 }

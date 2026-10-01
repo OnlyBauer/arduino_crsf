@@ -89,6 +89,42 @@ that, and both are enforced by CI before a tag can be made:
 
 ## [Unreleased]
 
+### Added
+
+- `CrsfEvery`, a small timer, so an example can say what it means:
+
+  ```cpp
+  CrsfEvery sensors(50);        // 20 times a second
+  if (sensors.due()) { ... }
+  ```
+
+  It replaces the `static uint32_t last; if (millis() - last < 50) return;`
+  opening that four of the six examples carried. That idiom needs a static, an
+  unsigned subtraction that is only correct because it wraps, and an early
+  `return` that silently governs everything below it -- three things to explain
+  before any CRSF appears. `delay()` cannot be used instead, because loop() has
+  to keep calling `CRSFv3::loop()`.
+
+  It also removes the `tick % 250` arithmetic two examples used to fake a second
+  timer: `CrsfTxStation` now simply has two, one for the sticks and one for the
+  link report.
+
+### Changed
+
+- **The examples are much shorter, and aimed at someone new to programming.**
+  `CrsfRxStation` goes from 138 lines to 75, `CrsfTxStation` from 220 to 121.
+
+  Three things dominated the old versions and none of them were CRSF:
+  26 lines of board-selection `#if`, repeated in all six; seven stub functions
+  returning 0, so a reader met 29 lines of `return 0;` before the first frame;
+  and the `millis()` gate above. The board block is now 5 lines with the STM32
+  explanation moved to the README, the stubs are gone in favour of literal
+  values with a unit comment, and the gate is `CrsfEvery`.
+
+  Comments throughout are shorter and say what the line does rather than why the
+  protocol is shaped that way -- that belongs in the docs, which the examples now
+  point at.
+
 ## [0.4.0] — 2026-10-01
 
 ### Added

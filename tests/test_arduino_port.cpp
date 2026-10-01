@@ -319,6 +319,38 @@ static void test_link_timeout(void)
     crsf.end();
 }
 
+/**
+ * @brief CrsfEvery fires once per interval, and survives the millis() wrap.
+ *
+ * The examples used to open with a static, a millis() subtraction and a
+ * comparison a beginner has to get right. This is that idiom, once.
+ */
+static void test_every(void)
+{
+    mock_set_micros(0);
+    CrsfEvery tick(50);
+
+    CHECK(!tick.due(), "nothing is due at start-up");
+    mock_advance_micros(49000);
+    CHECK(!tick.due(), "nor just before the interval");
+    mock_advance_micros(1000);
+    CHECK(tick.due(), "due once the interval passes");
+    CHECK(!tick.due(), "and only once");
+
+    mock_advance_micros(50000);
+    CHECK(tick.due(), "due again a interval later");
+
+    /*
+     * The wrap. millis() is 32 bits and rolls over after 49 days; the unsigned
+     * subtraction in due() stays correct across it, where a `now > last + ms`
+     * comparison would stall the timer for another 49 days.
+     */
+    mock_set_micros(0xFFFFFFFFu - 10000u); /* ~10 ms before the micros wrap */
+    (void)tick.due();                      /* re-anchor on this side of it */
+    mock_advance_micros(60000);            /* across, and past the interval */
+    CHECK(tick.due(), "still fires across the millis() wrap");
+}
+
 /** @brief A port can be constructed on a bare Stream, not only a HardwareSerial. */
 static void test_plain_stream(void)
 {
@@ -357,6 +389,7 @@ int main(void)
     test_channel_defaults_to_midpoint();
     test_plain_stream();
     test_link_timeout();
+    test_every();
 
     return test_end();
 }

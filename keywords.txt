@@ -7,6 +7,7 @@
 #######################################
 
 CRSFv3	KEYWORD1
+CrsfEvery	KEYWORD1
 crsf_handle_t	KEYWORD1
 crsf_channels_t	KEYWORD1
 crsf_battery_t	KEYWORD1
@@ -19,6 +20,7 @@ end	KEYWORD2
 port	KEYWORD2
 linkUp	KEYWORD2
 linkUpTimeoutMs	KEYWORD2
+due	KEYWORD2
 channels	KEYWORD2
 channel	KEYWORD2
 channelUs	KEYWORD2

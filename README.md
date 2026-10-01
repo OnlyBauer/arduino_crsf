@@ -52,7 +52,17 @@ it to that core, and give `micros()` to it as a clock.
 
 There are about fifteen convenience methods, for what a short sketch actually
 does: `linkUp()`, `linkUpTimeoutMs()`, `channel()`, `channelUs()`,
-`publishBattery()`, `telemetryInterval()`, `onFrame()` and so on.
+`publishBattery()`, `telemetryInterval()`, `onFrame()` and so on. `CrsfEvery`
+comes with them, for running something at a fixed rate without `delay()`:
+
+```cpp
+CrsfEvery sensors(50);              // 20 times a second
+
+void loop() {
+    crsf.loop();                    // must run every pass
+    if (sensors.due()) { /* ... */ }
+}
+```
 
 Everything else — the parameter protocol, the MAVLink and MSP tunnels, `0x32`
 Direct Commands, routing, and every one of the ~120 `crsf_send_*` and
@@ -69,6 +79,31 @@ That is deliberate. Wrapping all of them would double the documentation,
 guarantee that a function added upstream silently does not appear here, and buy
 nothing: Arduino builds with `-ffunction-sections -Wl,--gc-sections`, so an
 unreferenced C function costs exactly as little as an unreferenced method would.
+
+## Which serial port
+
+The examples open `Serial1` and say to see this section. Which port you want
+depends on the board, and the defaults are not always the obvious ones.
+
+| Board | What the examples use | Watch out for |
+| --- | --- | --- |
+| ESP32 | `Serial1` | The default pins are **not** the ones silkscreened. In esp32 core 3.x `Serial1` is GPIO26/27 and `Serial2` is GPIO4/25; the GPIO16/17 everyone remembers was core 2.x. Name the pins yourself: `Serial1.begin(416666, SERIAL_8N1, rx, tx)` and hand the library the `Stream`. Avoid GPIO6-11 on a WROOM-32, which are wired to the flash. |
+| RP2040, SAMD | `Serial1` | Works as written. |
+| STM32 | a `Uart` the sketch declares | `Serial1` is declared whenever USART1 exists but only *defined* when the board's generic `Serial` happens to be USART1. On a Nucleo64 that slot is USART2, the ST-Link VCP, so `Serial1` is a name with nothing behind it and the link fails. The examples declare `Uart CrsfSerial(PA10, PA9)` — USART1, the D0/D1 header pins. Change the pins for a different board. |
+| AVR (Nano, Uno) | `Serial` | An ATmega328P has one hardware UART and the USB console is on it, so CRSF takes it and the sketch cannot print. Needs `CRSF_ARDUINO_MINIMAL`; see **Architecture support** below. |
+
+To open the port yourself — different pins, a `SoftwareSerial`, a USB CDC —
+construct from a `Stream` instead of a `HardwareSerial`. The library then leaves
+`begin()` alone:
+
+```cpp
+CRSFv3 crsf((Stream &)Serial1);
+
+void setup() {
+    Serial1.begin(416666, SERIAL_8N1, 16, 17);   // your pins
+    crsf.begin(416666, CRSF_ROLE_RX);
+}
+```
 
 ## Architecture support
 

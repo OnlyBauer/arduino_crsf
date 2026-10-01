@@ -57,6 +57,57 @@ extern "C" {
 }
 
 /**
+ * @brief Do something at a fixed rate, without stopping the sketch.
+ *
+ * `delay()` cannot be used in a CRSF sketch: loop() has to keep calling
+ * CRSFv3::loop(), and anything that blocks stops frames being read. This is the
+ * usual replacement, with the awkward parts already right.
+ *
+ * @code
+ * CrsfEvery sensors(50);   // 50 ms, so 20 times a second
+ *
+ * void loop()
+ * {
+ *     crsf.loop();
+ *     if (sensors.due()) {
+ *         // runs 20 times a second
+ *     }
+ * }
+ * @endcode
+ *
+ * The first due() comes one interval after start-up, not immediately.
+ */
+class CrsfEvery
+{
+public:
+    /**
+     * @brief Make a timer.
+     * @param ms How long between runs, in milliseconds.
+     */
+    explicit CrsfEvery(uint32_t ms) : interval_(ms), last_(0) {}
+
+    /**
+     * @brief Whether the interval has passed. Call it in loop().
+     * @return true once per interval, false the rest of the time.
+     */
+    bool due()
+    {
+        const uint32_t now = millis();
+        /* Subtracting unsigned values stays correct when millis() wraps, which
+         * it does after 49 days. Comparing `now > last_ + interval_` would not. */
+        if (now - last_ < interval_) {
+            return false;
+        }
+        last_ = now;
+        return true;
+    }
+
+private:
+    uint32_t interval_;
+    uint32_t last_;
+};
+
+/**
  * @brief One CRSF port on an Arduino `Stream`.
  *
  * Allocates nothing: the protocol state is a member, so the object can be a
