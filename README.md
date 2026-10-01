@@ -18,7 +18,7 @@ void loop() {
 }
 ```
 
-## Status: 0.4.0, verified on hardware — against itself, not against a radio
+## Status: 0.5.0, verified on hardware — against itself, not against a radio
 
 `examples/CrsfLoopbackSelfTest` passes **9 of 9 checks on an ESP32-WROOM-32**
 with GPIO17 jumpered to GPIO16: battery, attitude and GPS frames round-trip

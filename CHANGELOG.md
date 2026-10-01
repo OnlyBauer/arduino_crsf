@@ -89,6 +89,8 @@ that, and both are enforced by CI before a tag can be made:
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-10-01
+
 ### Added
 
 - `CrsfEvery`, a small timer, so an example can say what it means:
