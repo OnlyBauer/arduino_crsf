@@ -11,7 +11,7 @@
 
 PROJECT_NAME           = "CRSFv3"
 PROJECT_BRIEF          = "TBS CRSFv3 for Arduino"
-PROJECT_NUMBER         = 0.3.0
+PROJECT_NUMBER         = 0.4.0
 OUTPUT_DIRECTORY       = docs
 
 # --- input ------------------------------------------------------------------

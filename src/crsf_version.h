@@ -18,10 +18,10 @@
 /** Minor version: incremented when the API gains something, compatibly. */
 #define CRSF_VERSION_MINOR 1
 /** Patch version: incremented for fixes that change no declaration. */
-#define CRSF_VERSION_PATCH 0
+#define CRSF_VERSION_PATCH 1
 
 /** The version as a string, matching the root VERSION file exactly. */
-#define CRSF_VERSION_STRING "1.1.0"
+#define CRSF_VERSION_STRING "1.1.1"
 
 /**
  * @brief The version as one comparable integer.

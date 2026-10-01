@@ -95,6 +95,11 @@ void setup()
     /* Publish whenever you have new data; the cadence is set once, here. */
     crsf.telemetryInterval(CRSF_TYPE_BATTERY, 200);
     crsf.telemetryInterval(CRSF_TYPE_ATTITUDE, 100);
+
+    /* How long channels may be missing before linkUp() goes false. The default
+     * is 1000 ms, which is what the specification recommends waiting before
+     * acting on a failsafe. Shorten it if your vehicle must react sooner. */
+    crsf.linkUpTimeoutMs(1000);
 }
 
 void loop()

@@ -18,6 +18,7 @@ loop	KEYWORD2
 end	KEYWORD2
 port	KEYWORD2
 linkUp	KEYWORD2
+linkUpTimeoutMs	KEYWORD2
 channels	KEYWORD2
 channel	KEYWORD2
 channelUs	KEYWORD2

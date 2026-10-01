@@ -18,7 +18,7 @@ void loop() {
 }
 ```
 
-## Status: 0.3.0, verified on hardware — against itself, not against a radio
+## Status: 0.4.0, verified on hardware — against itself, not against a radio
 
 `examples/CrsfLoopbackSelfTest` passes **9 of 9 checks on an ESP32-WROOM-32**
 with GPIO17 jumpered to GPIO16: battery, attitude and GPS frames round-trip
@@ -51,8 +51,8 @@ it to that core, and give `micros()` to it as a clock.
 ## The whole API, not just the methods
 
 There are about fifteen convenience methods, for what a short sketch actually
-does: `linkUp()`, `channel()`, `channelUs()`, `publishBattery()`,
-`telemetryInterval()`, `onFrame()` and so on.
+does: `linkUp()`, `linkUpTimeoutMs()`, `channel()`, `channelUs()`,
+`publishBattery()`, `telemetryInterval()`, `onFrame()` and so on.
 
 Everything else — the parameter protocol, the MAVLink and MSP tunnels, `0x32`
 Direct Commands, routing, and every one of the ~120 `crsf_send_*` and

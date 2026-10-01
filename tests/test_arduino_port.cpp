@@ -274,6 +274,51 @@ static void test_channel_defaults_to_midpoint(void)
     crsf.end();
 }
 
+/**
+ * @brief The link hold time is reachable without dropping to the C API.
+ *
+ * linkUpTimeoutMs() is what makes linkUp() usable: the default 1000 ms is the
+ * specification's failsafe recommendation, but a vehicle that must react sooner
+ * needs to shorten it, and before this that meant calling
+ * crsf_set_link_timeout() on the handle.
+ */
+static void test_link_timeout(void)
+{
+    CRSFv3 crsf(g_serial);
+    g_serial.reset();
+    mock_set_micros(0);
+    CHECK(open_port(crsf), "the port opens");
+
+    CHECK_EQ_INT(crsf.linkUpTimeoutMs(), 1000, "the default hold is 1000 ms");
+    CHECK(crsf.linkUpTimeoutMs(250), "a shorter hold is accepted");
+    CHECK_EQ_INT(crsf.linkUpTimeoutMs(), 250, "and reads back");
+
+    /* Bring the link up, then let it age past the shortened hold. */
+    uint8_t pl[CRSF_MAX_PAYLOAD_SIZE];
+    crsf_channels_t ch;
+    for (int i = 0; i < CRSF_NUM_CHANNELS; i++) {
+        ch.channel[i] = (uint16_t)(300 + i);
+    }
+    crsf_channels_pack(pl, &ch);
+    uint8_t frame[CRSF_MAX_FRAME_SIZE];
+    const size_t len = crsf_build_frame(frame, CRSF_ADDR_FLIGHT_CONTROLLER,
+                                        CRSF_TYPE_RC_CHANNELS_PACKED, 0, 0, pl,
+                                        CRSF_CHANNELS_PAYLOAD_SIZE);
+    g_serial.inject(frame, len);
+    crsf.loop();
+    CHECK(crsf.linkUp(), "the link comes up");
+
+    mock_advance_micros(200000); /* 200 ms, inside the hold */
+    crsf.loop();
+    CHECK(crsf.linkUp(), "and stays up inside the hold");
+
+    mock_advance_micros(100000); /* 300 ms total, past it */
+    crsf.loop();
+    CHECK(!crsf.linkUp(), "and goes down once the hold expires");
+
+    crsf.end();
+}
+
 /** @brief A port can be constructed on a bare Stream, not only a HardwareSerial. */
 static void test_plain_stream(void)
 {
@@ -311,6 +356,7 @@ int main(void)
     test_clock_wrap();
     test_channel_defaults_to_midpoint();
     test_plain_stream();
+    test_link_timeout();
 
     return test_end();
 }

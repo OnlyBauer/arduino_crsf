@@ -136,8 +136,37 @@ public:
      *  @{
      */
 
-    /** @brief Whether channel frames are arriving. @return true while up. */
+    /**
+     * @brief Whether channel frames are arriving.
+     *
+     * Goes false once nothing has arrived for linkUpTimeoutMs(). There is no
+     * "link lost" message in CRSF -- 0x16 simply stops -- so this is the only
+     * thing that tells a sketch the sticks it can read are no longer real.
+     *
+     * @return true while the link is up.
+     */
     bool linkUp() { return crsf_link_is_up(&port_); }
+
+    /**
+     * @brief How long channels may be missing before linkUp() goes false.
+     * @return The hold time in milliseconds.
+     */
+    uint32_t linkUpTimeoutMs() { return port_.link_timeout_ms; }
+
+    /**
+     * @brief Set how long channels may be missing before linkUp() goes false.
+     *
+     * The default is 1000 ms, which is what the specification recommends
+     * waiting before acting on a failsafe (crsf.md:519). Shorten it for a
+     * vehicle that must react sooner; lengthen it to ride out a noisy link.
+     *
+     * @param ms Hold time in milliseconds.
+     * @return true on success.
+     */
+    bool linkUpTimeoutMs(uint32_t ms)
+    {
+        return crsf_set_link_timeout(&port_, ms) == CRSF_OK;
+    }
 
     /**
      * @brief Latest channel values.

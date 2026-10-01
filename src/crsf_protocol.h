@@ -80,7 +80,7 @@ extern "C" {
  * reasoning in COMPLIANCE.md; the constants exist so a received frame can still
  * be identified and forwarded.
  */
-/* clang-format off */ /* Wertespalte ausgerichtet: Tabelle von Wire-Konstanten. */
+/* clang-format off */ /* Value column aligned: a table of wire constants. */
 typedef enum {
     /* --- Broadcast frame types, short header (crsf.md:255-643) --- */
     CRSF_TYPE_GPS                  = 0x02, /**< crsf.md:259 */
@@ -139,7 +139,7 @@ typedef enum {
  * byte. Addresses 0x20-0x7F are a dynamic NAT range and therefore not listed
  * individually; see crsf_is_valid_sync().
  */
-/* clang-format off */ /* Wertespalte ausgerichtet: Tabelle von Wire-Konstanten. */
+/* clang-format off */ /* Value column aligned: a table of wire constants. */
 typedef enum {
     CRSF_ADDR_BROADCAST          = 0x00, /**< every node; consumed and forwarded */
     CRSF_ADDR_CLOUD              = 0x0E,

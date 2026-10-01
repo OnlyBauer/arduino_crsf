@@ -89,7 +89,18 @@ that, and both are enforced by CI before a tag can be made:
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-10-01
+
 ### Added
+
+- `linkUpTimeoutMs()`, both as a getter and as a setter. It is what makes
+  `linkUp()` usable from a sketch: the hold time decides when `linkUp()` goes
+  false, and until now changing it meant dropping to the C API and calling
+  `crsf_set_link_timeout()` on the handle. The default stays 1000 ms, which is
+  what the specification recommends waiting before acting on a failsafe
+  (crsf.md:519); shorten it for a vehicle that must react sooner, lengthen it to
+  ride out a noisy link. `examples/CrsfRxStation` now sets it explicitly, next
+  to the failsafe check it already had.
 
 - **Hardware verification.** `examples/CrsfLoopbackSelfTest` has been run on an
   ESP32-WROOM-32 with GPIO17 jumpered to GPIO16, and passes 9 of 9 checks — in
@@ -106,6 +117,17 @@ that, and both are enforced by CI before a tag can be made:
   scheduler check prints the count it measured, so drift shows up as a number.
 
 ### Changed
+
+- **Every comment and message in this repository and its three siblings is now
+  in English.** Here that was already true; what changed is the vendored core,
+  which moves to c_crsf 1.1.1 for two translated comments in `crsf_crc.c` and
+  `crsf_protocol.h`. Those are part of the pinned vendored set, so they could
+  only arrive by re-vendoring.
+
+  Worth recording for the next pass: scanning for umlauts does not find German.
+  `"clang-tidy: keine Befunde"` has none, and neither do the ASCII-transliterated
+  comments (`ausdruecklich`, `waehrend`) in the sibling repositories. Only a scan
+  for whole words found those.
 
 - `CrsfLoopbackSelfTest` names its ESP32 pins and opens the port itself, through
   the `Stream` constructor. An ESP32's default UART pins are not the ones on a

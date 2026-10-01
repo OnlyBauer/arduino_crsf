@@ -10,9 +10,9 @@
 #include "crsf_crc.h"
 
 /*
- * Beide Tabellen stehen als 16x16-Raster genau so in crsf.md. clang-format
- * würde daraus bei ColumnLimit 0 je 256 einzelne Zeilen machen und den
- * Zeilenvergleich mit der Spezifikation unmöglich machen — deshalb hier aus.
+ * Both tables appear as 16x16 grids in crsf.md, exactly like this. At
+ * ColumnLimit 0 clang-format would turn each into 256 separate lines and make
+ * a line-by-line comparison with the specification impossible.
  */
 /* clang-format off */
 
