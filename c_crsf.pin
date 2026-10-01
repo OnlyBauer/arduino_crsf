@@ -1,6 +1,6 @@
 # Which c_crsf src holds. Written by tools/sync_core.sh; do not edit by hand.
 CRSF_CORE_URL=https://git.bauer.pub/Bauer/c_crsf.git
-CRSF_CORE_TAG=release_1.0.0
-CRSF_CORE_VERSION=1.0.0
-CRSF_CORE_SHA=686cb1972402b80932aaad532f069e890e176207
-CRSF_CORE_TREE=04b66590d5d8d87979d1b3967fb183b115d9bbac
+CRSF_CORE_TAG=release_1.1.0
+CRSF_CORE_VERSION=1.1.0
+CRSF_CORE_SHA=9b1c735a03d6ccb9b40e07eef1d31c4dd5e2c57b
+CRSF_CORE_TREE=f0ade62a931e6cec5adce749fbd3a7cae821fb21

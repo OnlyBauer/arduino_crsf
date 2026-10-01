@@ -10,17 +10,24 @@
 #ifndef CRSF_ARDUINO_CONF_H
 #define CRSF_ARDUINO_CONF_H
 
+/* For the CRSF_ENABLE_* values the AVR check below reads. */
+#include "crsf_conf.h"
+
 /*
- * AVR is not supported, and the numbers are not close: a crsf_port_t is ~3552
- * bytes measured, an ATmega328P has 2048 in total. Stripping the tunnels and
- * the parameter protocol reaches ~1499, which is 73 % of the part's RAM and
- * leaves the popular subset this project exists not to be.
+ * AVR fits, but only stripped. A full crsf_port_t is 3249 bytes measured and an
+ * ATmega328P has 2048; without the tunnels and the parameter protocol it is
+ * 1185, and with four scheduler slots and four callbacks 542.
  *
+ * So the check is on the configuration, not the architecture: build a Nano or
+ * an Uno with CRSF_ARDUINO_MINIMAL (see crsf_local_conf.h) and this is quiet.
+ * Leave the big features on and it stops the build here, because
  * library.properties' architectures field is only a hint -- without this the
  * IDE builds anyway and fails inside the linker, unactionably.
  */
 #if defined(__AVR__) && !defined(CRSF_ALLOW_AVR)
-#error "CRSFv3 needs about 3.5 KB of RAM; an ATmega328P has 2 KB. AVR boards are not supported -- see README.md, Architecture support. Use an ESP32, STM32, RP2040 or SAMD board. Define CRSF_ALLOW_AVR to attempt it anyway."
+#if CRSF_ENABLE_MSP || CRSF_ENABLE_MAVLINK || CRSF_ENABLE_PARAMS
+#error "This configuration needs more RAM than an AVR has: the MSP tunnel is 1038 bytes, MAVLink 571, the parameter protocol 455, against an ATmega328P's 2048 in total. Define CRSF_ARDUINO_MINIMAL in src/crsf_local_conf.h for a receiver or transmitter station, which is 542 bytes and fits. See README.md, Architecture support. Define CRSF_ALLOW_AVR to build it anyway."
+#endif
 #endif
 
 /**

@@ -205,6 +205,14 @@ build-examples:
       - CORE: "arduino:samd"
         FQBN: "arduino:samd:mkrzero"
         INDEX: ""
+      # AVR needs the minimal profile, and only the two station examples fit
+      # the subset it leaves. EXAMPLES and EXTRA are empty for every other
+      # cell, which then builds all six with no extra flags.
+      - CORE: "arduino:avr"
+        FQBN: "arduino:avr:nano"
+        INDEX: ""
+        EXAMPLES: "CrsfRxStation CrsfTxStation"
+        EXTRA: "-DCRSF_ARDUINO_MINIMAL=1"
   cache:
     key: "arduino-$CORE"
     paths:
@@ -219,16 +227,59 @@ build-examples:
     - arduino-cli core install "$CORE" ${INDEX:+--additional-urls "$INDEX"}
     - |
       set -e
-      for ex in examples/*/; do
-        name=$(basename "$ex")
+      names="${EXAMPLES:-}"
+      if [ -z "$names" ]; then
+        names=$(for ex in examples/*/; do basename "$ex"; done)
+      fi
+      props=""
+      if [ -n "${EXTRA:-}" ]; then
+        props="--build-property compiler.cpp.extra_flags=$EXTRA"
+        props="$props --build-property compiler.c.extra_flags=$EXTRA"
+      fi
+      for name in $names; do
         echo "=== $name ($FQBN) ==="
-        arduino-cli compile --fqbn "$FQBN" --library . --warnings more                             --output-dir "build_arduino/$name" "$ex$name.ino"
+        arduino-cli compile --fqbn "$FQBN" --library . --warnings more \
+          $props --output-dir "build_arduino/$name" "examples/$name/$name.ino"
       done
   artifacts:
     when: on_failure
     paths:
       - build_arduino/**/*.map
     expire_in: 1 week
+
+# The RAM and flash a real AVR build costs, so the README's table is measured
+# rather than asserted. Also the regression guard on the feature switches: if a
+# change pushes a station sketch back over an ATmega328P's 2048 bytes, this is
+# where it shows.
+size-avr:
+  stage: build
+  image: debian:bookworm-slim
+  variables:
+    ARDUINO_DIRECTORIES_DATA: $CI_PROJECT_DIR/.arduino15
+    ARDUINO_DIRECTORIES_DOWNLOADS: $CI_PROJECT_DIR/.arduino-dl
+    ARDUINO_DIRECTORIES_USER: $CI_PROJECT_DIR/.arduino-user
+  cache:
+    key: "arduino-arduino:avr"
+    paths:
+      - .arduino15/
+      - .arduino-dl/
+    policy: pull
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y -qq --no-install-recommends curl ca-certificates git python3
+    - curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | BINDIR=/usr/local/bin sh
+  script:
+    - arduino-cli core update-index
+    - arduino-cli core install arduino:avr
+    - |
+      set -e
+      for name in CrsfRxStation CrsfTxStation; do
+        echo "=== $name on arduino:avr:nano, CRSF_ARDUINO_MINIMAL ==="
+        arduino-cli compile --fqbn arduino:avr:nano --library . \
+          --build-property compiler.cpp.extra_flags=-DCRSF_ARDUINO_MINIMAL=1 \
+          --build-property compiler.c.extra_flags=-DCRSF_ARDUINO_MINIMAL=1 \
+          "examples/$name/$name.ino" 2>&1 | grep -Ei 'sketch uses|global variables'
+      done
 
 # --- docs ---------------------------------------------------------------------
 

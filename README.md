@@ -18,7 +18,7 @@ void loop() {
 }
 ```
 
-## Status: 0.2.0, not hardware-verified
+## Status: 0.3.0, not hardware-verified
 
 This library compiles for ESP32, STM32, RP2040 and SAMD, and passes its host
 suites against a mock Arduino runtime. It has **not** been run on a board, or
@@ -67,25 +67,35 @@ unreferenced C function costs exactly as little as an unreferenced method would.
 
 `architectures=esp32,stm32,rp2040,samd`.
 
-**AVR is not supported, and the numbers are not close.** A port needs about
-**3552 bytes** of RAM, measured. An ATmega328P has **2048** in total — before
-`HardwareSerial`'s two 64-byte rings, before the stack, before your sketch.
+**AVR works, but only stripped.** A full port is **3249 bytes** of RAM against
+an ATmega328P's **2048**, so the whole library does not fit. The compile-time
+switches in [`src/crsf_local_conf.h`](src/crsf_local_conf.h) make it fit.
+Measured with avr-gcc 7.3.0 at `-Os`, as the size of the protocol state:
 
 | Configuration | RAM | against 2048 |
 | --- | --- | --- |
-| Full | 3552 B | **173 %** |
-| without the tunnels | 1947 B | 95 % |
-| without tunnels *and* parameters | 1499 B | 73 % |
+| everything on | 3249 B | **159 %** |
+| without the tunnels | 1640 B | 80 % |
+| without tunnels *and* parameters | 1185 B | 58 % |
+| `CRSF_ARDUINO_MINIMAL` | **542 B** | **26 %** |
 
-The last row leaves about 550 bytes for everything else, and what it leaves is a
-library that can no longer do the parameter protocol or the tunnels — that is,
-the popular subset this project exists not to be. So `src/crsf_arduino_conf.h`
-stops the build with an `#error` rather than letting the IDE fail somewhere
-inside the linker with a message nobody can act on.
+`CRSF_ARDUINO_MINIMAL` is one line in `src/crsf_local_conf.h`. It drops the
+MAVLink and MSP tunnels, the parameter protocol and the router, and cuts the
+telemetry scheduler to four frame types — a receiver or transmitter station,
+which is what a Nano is for. The biggest single saving is not a tunnel: the
+scheduler holds a whole 60-byte payload per slot, so twelve slots are 900 bytes.
 
-Flash is *estimated* at 25–40 KB against an ATmega328P's 32256 usable, and is
-labelled an estimate because no one has measured it: there is no `avr-gcc` here.
-When the `size-avr` CI job has run, this table gets real numbers.
+Whole sketches, compiled for `arduino:avr:nano`:
+
+| Example | Flash of 30720 | RAM of 2048 | Free |
+| --- | --- | --- | --- |
+| `CrsfRxStation` | 8662 B (28 %) | 1285 B (62 %) | 763 B |
+| `CrsfTxStation` | 12400 B (40 %) | 1305 B (63 %) | 743 B |
+
+Leave the big features on and `src/crsf_arduino_conf.h` stops the build with an
+`#error` naming the switch, rather than letting the IDE fail inside the linker
+with a message nobody can act on. `CRSF_ALLOW_AVR` overrides that if you want to
+try regardless.
 
 Boards not listed are not refused, only untested. `esp8266` and
 `renesas_uno` (UNO R4, 32 KB of RAM) would probably work; they will be added

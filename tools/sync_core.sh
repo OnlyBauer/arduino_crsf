@@ -60,7 +60,7 @@ CRSF_CORE_URL=${CRSF_CORE_URL:-https://git.bauer.pub/Bauer/c_crsf.git}
 # sync was a real bug.
 vendored_files() {
   ls "$DEST"/crsf_*.c "$DEST"/crsf_*.h 2>/dev/null |
-    grep -v 'crsf_arduino_conf[.]h$' || true
+    grep -vE 'crsf_(arduino|local)_conf[.]h$' || true
 }
 
 # Hash the index entries of the vendored files, not a tree hash over src/:

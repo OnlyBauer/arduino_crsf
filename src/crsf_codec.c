@@ -11,7 +11,9 @@
 #include "crsf_codec.h"
 #include "crsf_bits.h"
 #include <string.h>
+#if CRSF_ENABLE_FLOAT_MATH
 #include <math.h>
+#endif
 
 /**
  * @brief Clamp helper used by the packed-altitude and vertical-speed conversions.
@@ -123,6 +125,7 @@ uint16_t crsf_altitude_pack(int32_t altitude_dm)
     return (uint16_t)(((altitude_dm + 5) / 10) | 0x8000);
 }
 
+#if CRSF_ENABLE_FLOAT_MATH
 int16_t crsf_vspeed_unpack(int8_t packed)
 {
     const int sign = (packed < 0) ? -1 : 1;
@@ -144,6 +147,7 @@ int8_t crsf_vspeed_pack(int16_t v_cm_s)
     const double packed = log(mag / CRSF_VS_KL + 1.0) / CRSF_VS_KR;
     return (int8_t)clamp_i32((int32_t)packed * sign, -128, 127);
 }
+#endif /* CRSF_ENABLE_FLOAT_MATH */
 
 /* ------------------------------------------------------------------------- */
 /* 0x02 GPS                                                                  */
@@ -301,6 +305,7 @@ bool crsf_decode_battery(const uint8_t *pl, size_t len, crsf_battery_t *out)
 /* 0x09 Barometric Altitude & Vertical Speed                                 */
 /* ------------------------------------------------------------------------- */
 
+#if CRSF_ENABLE_FLOAT_MATH
 size_t crsf_encode_baro_altitude(uint8_t *out, const crsf_baro_altitude_t *in)
 {
     crsf_put_be16(&out[0], crsf_altitude_pack(in->altitude_dm));
@@ -322,6 +327,7 @@ bool crsf_decode_baro_altitude(const uint8_t *pl, size_t len, crsf_baro_altitude
     out->v_speed_cm_s = (len >= 3) ? crsf_vspeed_unpack((int8_t)pl[2]) : 0;
     return true;
 }
+#endif /* CRSF_ENABLE_FLOAT_MATH */
 
 /* ------------------------------------------------------------------------- */
 /* 0x0A Airspeed / 0x0B Heartbeat                                            */

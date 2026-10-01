@@ -1,6 +1,6 @@
 {
   "name": "CRSFv3",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Complete TBS CRSFv3 for Arduino: telemetry, RC channels, parameters, MAVLink and MSP tunnels, 0x32 commands and routing. A thin wrapper over the portable c_crsf core, which also runs on ESP-IDF and STM32.",
   "keywords": "crsf, crossfire, elrs, expresslrs, telemetry, rc",
   "authors": [
@@ -16,6 +16,6 @@
   },
   "license": "Apache-2.0",
   "frameworks": "arduino",
-  "platforms": ["espressif32", "ststm32", "raspberrypi", "atmelsam"],
+  "platforms": ["atmelavr", "espressif32", "ststm32", "raspberrypi", "atmelsam"],
   "headers": "CRSFv3.h"
 }

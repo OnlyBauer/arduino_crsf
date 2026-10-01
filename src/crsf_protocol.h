@@ -16,6 +16,8 @@
 #ifndef CRSF_PROTOCOL_H
 #define CRSF_PROTOCOL_H
 
+#include "crsf_conf.h"
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -732,8 +734,15 @@ typedef struct {
 /** Maximum payload data bytes per envelope chunk (crsf.md:1307). */
 #define CRSF_MAVLINK_CHUNK_MAX 58
 
-/** Largest MAVLink2 frame the spec expects to tunnel (crsf.md:1297). */
+/**
+ * Largest MAVLink2 frame the spec expects to tunnel (crsf.md:1297).
+ *
+ * Overridable: one buffer of this size sits in every crsf_port that builds the
+ * MAVLink tunnel. A frame larger than this is rejected, not truncated.
+ */
+#ifndef CRSF_MAVLINK_FRAME_MAX
 #define CRSF_MAVLINK_FRAME_MAX 281
+#endif
 
 /**
  * @brief One 0xAA chunk. Indices are zero-based (crsf.md:1298).

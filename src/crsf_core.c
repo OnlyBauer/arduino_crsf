@@ -98,6 +98,7 @@ static inline void unlock(crsf_handle_t h)
     }
 }
 
+#if CRSF_ENABLE_ROUTER
 /**
  * @brief Take the router lock, if it has one.
  * @param r Router instance.
@@ -119,6 +120,7 @@ static inline void router_unlock(crsf_router_t *r)
         r->unlock(r->lock_ctx);
     }
 }
+#endif /* CRSF_ENABLE_ROUTER */
 
 /**
  * @brief Report an event, if the port cares about them.
@@ -168,7 +170,7 @@ static crsf_err_t tx_enqueue(crsf_handle_t h, const uint8_t *frame, size_t len)
 }
 
 crsf_err_t crsf_send_frame(crsf_handle_t h, uint8_t type, uint8_t destination,
-                          const void *payload, size_t payload_len)
+                           const void *payload, size_t payload_len)
 {
     if (!h) {
         return CRSF_ERR_INVALID_ARG;
@@ -196,14 +198,14 @@ crsf_err_t crsf_send_frame(crsf_handle_t h, uint8_t type, uint8_t destination,
  * @return As crsf_send_frame().
  */
 static crsf_err_t send_broadcast(crsf_handle_t h, uint8_t type,
-                                const uint8_t *payload, size_t len)
+                                 const uint8_t *payload, size_t len)
 {
     return crsf_send_frame(h, type, CRSF_ADDR_BROADCAST, payload, len);
 }
 
 crsf_err_t crsf_send_command(crsf_handle_t h, uint8_t destination,
-                            uint8_t command_id, uint8_t sub_id,
-                            const void *args, size_t args_len)
+                             uint8_t command_id, uint8_t sub_id,
+                             const void *args, size_t args_len)
 {
     if (!h) {
         return CRSF_ERR_INVALID_ARG;
@@ -219,8 +221,8 @@ crsf_err_t crsf_send_command(crsf_handle_t h, uint8_t destination,
 }
 
 crsf_err_t crsf_send_command_ack(crsf_handle_t h, uint8_t destination,
-                                uint8_t command_id, uint8_t sub_id,
-                                bool acted, const char *info)
+                                 uint8_t command_id, uint8_t sub_id,
+                                 bool acted, const char *info)
 {
     /* Payload of 0x32.0xFF: acked command, sub id, action flag, optional string
      * (crsf.md:968). */
@@ -279,28 +281,28 @@ crsf_err_t crsf_send_command_ack(crsf_handle_t h, uint8_t destination,
  * @param encoder    Encoder from crsf_codec.h for @p ctype.
  */
 #define DEFINE_TELEMETRY(send_fn, publish_fn, type_id, ctype, encoder) \
-    crsf_err_t send_fn(crsf_handle_t h, const ctype *in)                \
+    crsf_err_t send_fn(crsf_handle_t h, const ctype *in)               \
     {                                                                  \
         if (!h || !in) {                                               \
-            return CRSF_ERR_INVALID_ARG;                                \
+            return CRSF_ERR_INVALID_ARG;                               \
         }                                                              \
         uint8_t pl[CRSF_MAX_PAYLOAD_SIZE];                             \
         const size_t n = encoder(pl, in);                              \
         if (n == 0) {                                                  \
-            return CRSF_ERR_INVALID_ARG;                                \
+            return CRSF_ERR_INVALID_ARG;                               \
         }                                                              \
         return send_broadcast(h, (type_id), pl, n);                    \
     }                                                                  \
                                                                        \
-    crsf_err_t publish_fn(crsf_handle_t h, const ctype *in)             \
+    crsf_err_t publish_fn(crsf_handle_t h, const ctype *in)            \
     {                                                                  \
         if (!h || !in) {                                               \
-            return CRSF_ERR_INVALID_ARG;                                \
+            return CRSF_ERR_INVALID_ARG;                               \
         }                                                              \
         uint8_t pl[CRSF_MAX_PAYLOAD_SIZE];                             \
         const size_t n = encoder(pl, in);                              \
         if (n == 0) {                                                  \
-            return CRSF_ERR_INVALID_ARG;                                \
+            return CRSF_ERR_INVALID_ARG;                               \
         }                                                              \
         return crsf_telemetry_publish(h, (type_id), pl, n);            \
     }
@@ -310,7 +312,9 @@ DEFINE_TELEMETRY(crsf_send_gps_time, crsf_publish_gps_time, CRSF_TYPE_GPS_TIME, 
 DEFINE_TELEMETRY(crsf_send_gps_extended, crsf_publish_gps_extended, CRSF_TYPE_GPS_EXTENDED, crsf_gps_extended_t, crsf_encode_gps_extended)
 DEFINE_TELEMETRY(crsf_send_vario, crsf_publish_vario, CRSF_TYPE_VARIO, crsf_vario_t, crsf_encode_vario)
 DEFINE_TELEMETRY(crsf_send_battery, crsf_publish_battery, CRSF_TYPE_BATTERY, crsf_battery_t, crsf_encode_battery)
+#if CRSF_ENABLE_FLOAT_MATH
 DEFINE_TELEMETRY(crsf_send_baro_altitude, crsf_publish_baro_altitude, CRSF_TYPE_BARO_ALTITUDE, crsf_baro_altitude_t, crsf_encode_baro_altitude)
+#endif
 DEFINE_TELEMETRY(crsf_send_airspeed, crsf_publish_airspeed, CRSF_TYPE_AIRSPEED, crsf_airspeed_t, crsf_encode_airspeed)
 DEFINE_TELEMETRY(crsf_send_rpm, crsf_publish_rpm, CRSF_TYPE_RPM, crsf_rpm_t, crsf_encode_rpm)
 DEFINE_TELEMETRY(crsf_send_temp, crsf_publish_temp, CRSF_TYPE_TEMP, crsf_temp_t, crsf_encode_temp)
@@ -464,7 +468,11 @@ crsf_err_t crsf_send_device_info(crsf_handle_t h, uint8_t destination)
     uint8_t pl[CRSF_MAX_EXT_PAYLOAD_SIZE];
     lock(h);
     /* Report the attached provider's parameter count, if any. */
+#if CRSF_ENABLE_PARAMS
     h->device_info.parameters_total = h->provider ? h->provider->count : 0;
+#else
+    h->device_info.parameters_total = 0; /* no provider can exist */
+#endif
     const size_t n = crsf_encode_device_info(pl, &h->device_info);
     unlock(h);
     if (n == 0) {
@@ -474,7 +482,7 @@ crsf_err_t crsf_send_device_info(crsf_handle_t h, uint8_t destination)
 }
 
 crsf_err_t crsf_send_timing_correction(crsf_handle_t h, uint8_t destination,
-                                      const crsf_timing_correction_t *t)
+                                       const crsf_timing_correction_t *t)
 {
     if (!h || !t) {
         return CRSF_ERR_INVALID_ARG;
@@ -521,7 +529,7 @@ static crsf_sched_slot_t *slot_for(crsf_handle_t h, uint8_t type, bool create)
 }
 
 crsf_err_t crsf_telemetry_publish(crsf_handle_t h, uint8_t type,
-                                 const void *payload, size_t len)
+                                  const void *payload, size_t len)
 {
     /*
      * A NULL payload would reach memcpy(); reject it here rather than letting it
@@ -552,7 +560,7 @@ crsf_err_t crsf_telemetry_publish(crsf_handle_t h, uint8_t type,
 }
 
 crsf_err_t crsf_telemetry_set_interval(crsf_handle_t h, uint8_t type,
-                                      uint32_t interval_ms)
+                                       uint32_t interval_ms)
 {
     if (!h || type == 0) {
         return CRSF_ERR_INVALID_ARG;
@@ -632,6 +640,8 @@ static void scheduler_tick(crsf_handle_t h)
 /* tunnels                                                                   */
 /* ------------------------------------------------------------------------- */
 
+#if CRSF_ENABLE_MAVLINK
+
 /**
  * @brief Send one 0xAA MAVLink envelope chunk.
  *
@@ -647,7 +657,7 @@ static void scheduler_tick(crsf_handle_t h)
  * @return As crsf_send_frame().
  */
 static crsf_err_t send_mavlink_chunk(crsf_handle_t h, uint8_t destination,
-                                    const crsf_mavlink_envelope_t *chunk)
+                                     const crsf_mavlink_envelope_t *chunk)
 {
     uint8_t pl[CRSF_MAX_PAYLOAD_SIZE];
     const size_t n = crsf_encode_mavlink_envelope(pl, chunk);
@@ -681,7 +691,7 @@ static crsf_err_t send_mavlink_chunk(crsf_handle_t h, uint8_t destination,
 }
 
 crsf_err_t crsf_mavlink_send(crsf_handle_t h, uint8_t destination,
-                            const uint8_t *frame, size_t len)
+                             const uint8_t *frame, size_t len)
 {
     if (!h || !frame || len == 0) {
         return CRSF_ERR_INVALID_ARG;
@@ -724,6 +734,9 @@ crsf_err_t crsf_mavlink_send(crsf_handle_t h, uint8_t destination,
     return CRSF_OK;
 }
 
+#endif /* CRSF_ENABLE_MAVLINK */
+
+#if CRSF_ENABLE_MAVLINK
 crsf_err_t crsf_mavlink_on_frame(crsf_handle_t h, crsf_mavlink_cb_t cb, void *ctx)
 {
     if (!h) {
@@ -736,8 +749,11 @@ crsf_err_t crsf_mavlink_on_frame(crsf_handle_t h, crsf_mavlink_cb_t cb, void *ct
     return CRSF_OK;
 }
 
+#endif /* CRSF_ENABLE_MAVLINK */
+
+#if CRSF_ENABLE_MSP
 crsf_err_t crsf_msp_send(crsf_handle_t h, uint8_t destination, const uint8_t *body,
-                        size_t len, uint8_t version, bool is_response)
+                         size_t len, uint8_t version, bool is_response)
 {
     if (!h || !body || len == 0) {
         return CRSF_ERR_INVALID_ARG;
@@ -772,9 +788,13 @@ crsf_err_t crsf_msp_on_frame(crsf_handle_t h, crsf_msp_cb_t cb, void *ctx)
     return CRSF_OK;
 }
 
+#endif /* CRSF_ENABLE_MSP */
+
 /* ------------------------------------------------------------------------- */
 /* parameters                                                                */
 /* ------------------------------------------------------------------------- */
+
+#if CRSF_ENABLE_PARAMS
 
 crsf_err_t crsf_params_attach_provider(crsf_handle_t h, crsf_param_provider_t *provider)
 {
@@ -788,8 +808,8 @@ crsf_err_t crsf_params_attach_provider(crsf_handle_t h, crsf_param_provider_t *p
 }
 
 crsf_err_t crsf_params_walk(crsf_handle_t h, uint8_t device, uint8_t total,
-                           crsf_param_entry_cb_t on_entry,
-                           crsf_param_done_cb_t on_done, void *ctx)
+                            crsf_param_entry_cb_t on_entry,
+                            crsf_param_done_cb_t on_done, void *ctx)
 {
     if (!h) {
         return CRSF_ERR_INVALID_ARG;
@@ -943,7 +963,7 @@ static void walk_feed(crsf_handle_t h, const crsf_frame_t *frame)
 }
 
 crsf_err_t crsf_params_write_float(crsf_handle_t h, uint8_t device, uint8_t number,
-                                  int32_t value)
+                                   int32_t value)
 {
     uint8_t pl[5];
     pl[0] = number;
@@ -952,14 +972,14 @@ crsf_err_t crsf_params_write_float(crsf_handle_t h, uint8_t device, uint8_t numb
 }
 
 crsf_err_t crsf_params_write_selection(crsf_handle_t h, uint8_t device,
-                                      uint8_t number, uint8_t index)
+                                       uint8_t number, uint8_t index)
 {
     const uint8_t pl[2] = {number, index};
     return crsf_send_frame(h, CRSF_TYPE_PARAM_WRITE, device, pl, sizeof(pl));
 }
 
 crsf_err_t crsf_params_write_string(crsf_handle_t h, uint8_t device, uint8_t number,
-                                   const char *value)
+                                    const char *value)
 {
     if (!value) {
         return CRSF_ERR_INVALID_ARG;
@@ -975,7 +995,7 @@ crsf_err_t crsf_params_write_string(crsf_handle_t h, uint8_t device, uint8_t num
 }
 
 crsf_err_t crsf_params_command(crsf_handle_t h, uint8_t device, uint8_t number,
-                              crsf_cmd_status_t status)
+                               crsf_cmd_status_t status)
 {
     const uint8_t pl[2] = {number, (uint8_t)status};
     return crsf_send_frame(h, CRSF_TYPE_PARAM_WRITE, device, pl, sizeof(pl));
@@ -1038,6 +1058,8 @@ static void provider_handle(crsf_handle_t h, const crsf_frame_t *frame)
         (void)crsf_send_frame(h, reply_type, frame->origin, out, n);
     }
 }
+
+#endif /* CRSF_ENABLE_PARAMS */
 
 /* ------------------------------------------------------------------------- */
 /* receive path                                                              */
@@ -1195,6 +1217,7 @@ static void handle_command(crsf_handle_t h, const crsf_frame_t *frame)
  * @param h     Port handle.
  * @param frame The received envelope frame.
  */
+#if CRSF_ENABLE_MAVLINK
 static void handle_mavlink_envelope(crsf_handle_t h, const crsf_frame_t *frame)
 {
     crsf_mavlink_envelope_t chunk;
@@ -1228,6 +1251,9 @@ static void handle_mavlink_envelope(crsf_handle_t h, const crsf_frame_t *frame)
  * @param h     Port handle.
  * @param frame The received MSP frame.
  */
+#endif /* CRSF_ENABLE_MAVLINK */
+
+#if CRSF_ENABLE_MSP
 static void handle_msp(crsf_handle_t h, const crsf_frame_t *frame)
 {
     const bool is_response = (frame->type == CRSF_TYPE_MSP_RESPONSE);
@@ -1270,6 +1296,8 @@ static void handle_msp(crsf_handle_t h, const crsf_frame_t *frame)
     }
 }
 
+#endif /* CRSF_ENABLE_MSP */
+
 /**
  * @brief Decide where a received frame goes, and repeat it there (crsf.md:181).
  *
@@ -1287,6 +1315,7 @@ static void handle_msp(crsf_handle_t h, const crsf_frame_t *frame)
  * @param decision Receives the decision; @c consume_locally tells the caller
  *                 whether to go on processing the frame itself.
  */
+#if CRSF_ENABLE_ROUTER
 static void route_frame(crsf_handle_t h, const crsf_frame_t *frame,
                         const uint8_t *raw, size_t raw_len,
                         crsf_route_decision_t *decision)
@@ -1340,6 +1369,8 @@ static void route_frame(crsf_handle_t h, const crsf_frame_t *frame,
     router_unlock(router);
 }
 
+#endif /* CRSF_ENABLE_ROUTER */
+
 /**
  * @brief Parser callback: snapshots, protocol services, routing, then the app.
  *
@@ -1359,6 +1390,7 @@ static void on_frame(const crsf_frame_t *frame, void *ctx)
      * Rebuild the frame verbatim for forwarding. The parser hands out a view into
      * its own buffer, and the sync/length bytes are not part of it.
      */
+#if CRSF_ENABLE_ROUTER
     crsf_route_decision_t decision = {.consume_locally = true, .port_count = 0};
     if (h->router) {
         uint8_t raw[CRSF_MAX_FRAME_SIZE];
@@ -1373,6 +1405,7 @@ static void on_frame(const crsf_frame_t *frame, void *ctx)
     if (!decision.consume_locally) {
         return;
     }
+#endif /* CRSF_ENABLE_ROUTER */
 
     switch (frame->type) {
     case CRSF_TYPE_RC_CHANNELS_PACKED: {
@@ -1410,6 +1443,7 @@ static void on_frame(const crsf_frame_t *frame, void *ctx)
         handle_command(h, frame);
         break;
 
+#if CRSF_ENABLE_PARAMS
     case CRSF_TYPE_PARAM_READ:
     case CRSF_TYPE_PARAM_WRITE:
         provider_handle(h, frame);
@@ -1418,15 +1452,20 @@ static void on_frame(const crsf_frame_t *frame, void *ctx)
     case CRSF_TYPE_PARAM_ENTRY:
         walk_feed(h, frame);
         break;
+#endif /* CRSF_ENABLE_PARAMS */
 
+#if CRSF_ENABLE_MAVLINK
     case CRSF_TYPE_MAVLINK_ENVELOPE:
         handle_mavlink_envelope(h, frame);
         break;
+#endif /* CRSF_ENABLE_MAVLINK */
 
+#if CRSF_ENABLE_MSP
     case CRSF_TYPE_MSP_REQUEST:
     case CRSF_TYPE_MSP_RESPONSE:
         handle_msp(h, frame);
         break;
+#endif /* CRSF_ENABLE_MSP */
 
     default:
         break;
@@ -1434,7 +1473,6 @@ static void on_frame(const crsf_frame_t *frame, void *ctx)
 
     dispatch_callbacks(h, frame);
 }
-
 
 /**
  * @brief Switch to a negotiated baudrate once the reply has left the wire.
@@ -1598,7 +1636,7 @@ crsf_err_t crsf_set_link_timeout(crsf_handle_t h, uint32_t timeout_ms)
 }
 
 crsf_err_t crsf_get_link_statistics(crsf_handle_t h, crsf_link_statistics_t *out,
-                                   uint32_t *age_ms)
+                                    uint32_t *age_ms)
 {
     if (!h) {
         return CRSF_ERR_INVALID_ARG;
@@ -1682,7 +1720,7 @@ uint8_t crsf_self_address(crsf_handle_t h)
 }
 
 crsf_err_t crsf_propose_baudrate(crsf_handle_t h, uint8_t destination,
-                                uint32_t baudrate)
+                                 uint32_t baudrate)
 {
     if (!h) {
         return CRSF_ERR_INVALID_ARG;
@@ -1703,8 +1741,10 @@ crsf_err_t crsf_propose_baudrate(crsf_handle_t h, uint8_t destination,
 /* routing attachment                                                        */
 /* ------------------------------------------------------------------------- */
 
+#if CRSF_ENABLE_ROUTER
+
 crsf_err_t crsf_router_attach(crsf_handle_t h, crsf_router_t *router,
-                             uint8_t port_index)
+                              uint8_t port_index)
 {
     if (!h || !router || port_index >= CRSF_ROUTER_MAX_PORTS) {
         return CRSF_ERR_INVALID_ARG;
@@ -1782,6 +1822,8 @@ crsf_err_t crsf_router_detach(crsf_handle_t h)
     return CRSF_OK;
 }
 
+#endif /* CRSF_ENABLE_ROUTER */
+
 /* ------------------------------------------------------------------------- */
 /* what a platform port drives                                               */
 /* ------------------------------------------------------------------------- */
@@ -1827,8 +1869,12 @@ crsf_err_t crsf_port_init(crsf_handle_t h, const crsf_io_ops_t *ops, void *ctx,
     h->device_info.parameters_total = 0;
     h->device_info.parameter_version = 1;
 
+#if CRSF_ENABLE_MAVLINK
     crsf_mavlink_reasm_reset(&h->mavlink_reasm);
+#endif
+#if CRSF_ENABLE_MSP
     crsf_msp_reasm_reset(&h->msp_reasm);
+#endif
     crsf_parser_init(&h->parser, on_frame, h);
 
     h->running = true;
@@ -1866,12 +1912,17 @@ void crsf_port_tick(crsf_handle_t h)
         return;
     }
     scheduler_tick(h);
+#if CRSF_ENABLE_PARAMS
     walk_tick(h);
+#endif
     check_baudrate_fallback(h);
 }
 
 void crsf_port_leave_router(crsf_handle_t h)
 {
+#if !CRSF_ENABLE_ROUTER
+    (void)h;
+#else
     if (!h) {
         return;
     }
@@ -1898,6 +1949,7 @@ void crsf_port_leave_router(crsf_handle_t h)
         }
         router_unlock(was_on);
     }
+#endif /* CRSF_ENABLE_ROUTER */
 }
 
 void crsf_port_after_tx(crsf_handle_t h)

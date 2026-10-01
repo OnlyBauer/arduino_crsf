@@ -7,6 +7,12 @@
 #include "crsf_router.h"
 #include <string.h>
 
+/** Placeholder: ISO C forbids an empty translation unit, and every function
+ *  in this file can be configured out. */
+typedef int crsf_router_translation_unit_is_not_empty;
+
+#if CRSF_ENABLE_ROUTER
+
 bool crsf_router_init(crsf_router_t *r, uint8_t port_count, uint8_t self_address)
 {
     if (!r || port_count == 0 || port_count > CRSF_ROUTER_MAX_PORTS) {
@@ -206,3 +212,5 @@ void crsf_router_route(crsf_router_t *r, const crsf_frame_t *frame,
         r->dropped_no_route++;
     }
 }
+
+#endif /* CRSF_ENABLE_ROUTER */

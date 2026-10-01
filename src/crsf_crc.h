@@ -13,6 +13,8 @@
 #ifndef CRSF_CRC_H
 #define CRSF_CRC_H
 
+#include "crsf_conf.h"
+
 #include <stdint.h>
 #include <stddef.h>
 

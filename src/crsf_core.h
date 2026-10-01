@@ -182,7 +182,7 @@ crsf_err_t crsf_set_link_timeout(crsf_handle_t h, uint32_t timeout_ms);
  * @retval CRSF_ERR_INVALID_ARG @p h is NULL.
  */
 crsf_err_t crsf_get_link_statistics(crsf_handle_t h, crsf_link_statistics_t *out,
-                                   uint32_t *age_ms);
+                                    uint32_t *age_ms);
 
 /**
  * @brief Parser health counters: bad CRC, bad length, resyncs and so on.
@@ -223,7 +223,7 @@ crsf_err_t crsf_get_parser_stats(crsf_handle_t h, crsf_parser_stats_t *out);
  *       queue, not the wire.
  */
 crsf_err_t crsf_send_frame(crsf_handle_t h, uint8_t type, uint8_t destination,
-                          const void *payload, size_t payload_len);
+                           const void *payload, size_t payload_len);
 
 /**
  * @brief Queue a 0x32 Direct Command, including the extra CRC8 (poly 0xBA).
@@ -237,8 +237,8 @@ crsf_err_t crsf_send_frame(crsf_handle_t h, uint8_t type, uint8_t destination,
  * @return As crsf_send_frame().
  */
 crsf_err_t crsf_send_command(crsf_handle_t h, uint8_t destination,
-                            uint8_t command_id, uint8_t sub_id,
-                            const void *args, size_t args_len);
+                             uint8_t command_id, uint8_t sub_id,
+                             const void *args, size_t args_len);
 
 /**
  * @brief Queue a 0x32.0xFF Command ACK (crsf.md:966).
@@ -254,8 +254,8 @@ crsf_err_t crsf_send_command(crsf_handle_t h, uint8_t destination,
  * @return As crsf_send_frame().
  */
 crsf_err_t crsf_send_command_ack(crsf_handle_t h, uint8_t destination,
-                                uint8_t command_id, uint8_t sub_id,
-                                bool acted, const char *info);
+                                 uint8_t command_id, uint8_t sub_id,
+                                 bool acted, const char *info);
 
 /** @} */
 
@@ -289,7 +289,9 @@ crsf_err_t crsf_send_vario(crsf_handle_t h, const crsf_vario_t *in);
 crsf_err_t crsf_send_battery(crsf_handle_t h, const crsf_battery_t *in);
 
 /** @brief Send 0x09 Baro Altitude and Vertical Speed. @param h Port handle. @param in Altitude and vertical speed; packed lossily. @return As crsf_send_frame(). */
+#if CRSF_ENABLE_FLOAT_MATH
 crsf_err_t crsf_send_baro_altitude(crsf_handle_t h, const crsf_baro_altitude_t *in);
+#endif
 
 /** @brief Send 0x0A Airspeed. @param h Port handle. @param in Airspeed. @return As crsf_send_frame(). */
 crsf_err_t crsf_send_airspeed(crsf_handle_t h, const crsf_airspeed_t *in);
@@ -413,7 +415,7 @@ crsf_err_t crsf_send_device_info(crsf_handle_t h, uint8_t destination);
  * @return As crsf_send_frame().
  */
 crsf_err_t crsf_send_timing_correction(crsf_handle_t h, uint8_t destination,
-                                      const crsf_timing_correction_t *t);
+                                       const crsf_timing_correction_t *t);
 
 /** @} */
 
@@ -427,8 +429,8 @@ crsf_err_t crsf_send_timing_correction(crsf_handle_t h, uint8_t destination,
  * @{
  */
 
-/** Number of frame types that can be scheduled per port. */
-#define CRSF_SCHED_MAX_SLOTS 12
+/* CRSF_SCHED_MAX_SLOTS is configuration; see crsf_conf.h. It sizes
+ * crsf_port::slots, at 75 bytes a slot. */
 
 /**
  * @brief Publish the latest payload for @p type, to be sent on its interval.
@@ -458,7 +460,7 @@ crsf_err_t crsf_send_timing_correction(crsf_handle_t h, uint8_t destination,
  *       need to emit a single payload-less frame.
  */
 crsf_err_t crsf_telemetry_publish(crsf_handle_t h, uint8_t type,
-                                 const void *payload, size_t len);
+                                  const void *payload, size_t len);
 
 /**
  * @brief Set the send interval for a scheduled frame type.
@@ -477,7 +479,7 @@ crsf_err_t crsf_telemetry_publish(crsf_handle_t h, uint8_t type,
  *       CONFIG_FREERTOS_HZ if you need finer pacing.
  */
 crsf_err_t crsf_telemetry_set_interval(crsf_handle_t h, uint8_t type,
-                                      uint32_t interval_ms);
+                                       uint32_t interval_ms);
 
 /**
  * @brief Bytes per second the current baudrate allows, at 8N1 (10 bits/byte).
@@ -538,7 +540,9 @@ crsf_err_t crsf_publish_vario(crsf_handle_t h, const crsf_vario_t *in);
 crsf_err_t crsf_publish_battery(crsf_handle_t h, const crsf_battery_t *in);
 
 /** @brief Publish 0x09 Baro Altitude and Vertical Speed. @param h Port handle. @param in Altitude and vertical speed; packed lossily. @return As crsf_telemetry_publish(). */
+#if CRSF_ENABLE_FLOAT_MATH
 crsf_err_t crsf_publish_baro_altitude(crsf_handle_t h, const crsf_baro_altitude_t *in);
+#endif
 
 /** @brief Publish 0x0A Airspeed. @param h Port handle. @param in Airspeed. @return As crsf_telemetry_publish(). */
 crsf_err_t crsf_publish_airspeed(crsf_handle_t h, const crsf_airspeed_t *in);
@@ -614,6 +618,8 @@ crsf_err_t crsf_publish_game(crsf_handle_t h, const crsf_game_t *in);
  * @{
  */
 
+#if CRSF_ENABLE_MAVLINK
+
 /**
  * @brief Send a whole MAVLink frame, split across 0xAA envelopes as needed.
  *
@@ -630,7 +636,7 @@ crsf_err_t crsf_publish_game(crsf_handle_t h, const crsf_game_t *in);
  * @note Header form follows crsf_config_t::mavlink_envelope_extended_header.
  */
 crsf_err_t crsf_mavlink_send(crsf_handle_t h, uint8_t destination,
-                            const uint8_t *frame, size_t len);
+                             const uint8_t *frame, size_t len);
 
 /**
  * @brief Called when a complete MAVLink frame has been reassembled.
@@ -654,6 +660,10 @@ typedef void (*crsf_mavlink_cb_t)(crsf_handle_t h, const uint8_t *frame, size_t 
  */
 crsf_err_t crsf_mavlink_on_frame(crsf_handle_t h, crsf_mavlink_cb_t cb, void *ctx);
 
+#endif /* CRSF_ENABLE_MAVLINK */
+
+#if CRSF_ENABLE_MSP
+
 /**
  * @brief Send an MSP body, split across 0x7A or 0x7B frames as needed.
  *
@@ -670,7 +680,7 @@ crsf_err_t crsf_mavlink_on_frame(crsf_handle_t h, crsf_mavlink_cb_t cb, void *ct
  * @return Otherwise as crsf_send_frame().
  */
 crsf_err_t crsf_msp_send(crsf_handle_t h, uint8_t destination, const uint8_t *body,
-                        size_t len, uint8_t version, bool is_response);
+                         size_t len, uint8_t version, bool is_response);
 
 /**
  * @brief Called when a complete MSP body has been reassembled.
@@ -701,12 +711,16 @@ typedef void (*crsf_msp_cb_t)(crsf_handle_t h, uint8_t origin, bool is_response,
  */
 crsf_err_t crsf_msp_on_frame(crsf_handle_t h, crsf_msp_cb_t cb, void *ctx);
 
+#endif /* CRSF_ENABLE_MSP */
+
 /** @} */
 
 /**
  * @name Parameter protocol
  * @{
  */
+
+#if CRSF_ENABLE_PARAMS
 
 /**
  * @brief Serve a parameter tree on this port (device side).
@@ -765,8 +779,8 @@ typedef void (*crsf_param_done_cb_t)(crsf_handle_t h, uint8_t device, bool ok,
  * @retval CRSF_ERR_INVALID_ARG   @p h is NULL.
  */
 crsf_err_t crsf_params_walk(crsf_handle_t h, uint8_t device, uint8_t total,
-                           crsf_param_entry_cb_t on_entry,
-                           crsf_param_done_cb_t on_done, void *ctx);
+                            crsf_param_entry_cb_t on_entry,
+                            crsf_param_done_cb_t on_done, void *ctx);
 
 /**
  * @brief Write a FLOAT parameter on a remote device.
@@ -777,7 +791,7 @@ crsf_err_t crsf_params_walk(crsf_handle_t h, uint8_t device, uint8_t total,
  * @return As crsf_send_frame().
  */
 crsf_err_t crsf_params_write_float(crsf_handle_t h, uint8_t device, uint8_t number,
-                                  int32_t value);
+                                   int32_t value);
 
 /**
  * @brief Write a TEXT_SELECTION parameter on a remote device.
@@ -788,7 +802,7 @@ crsf_err_t crsf_params_write_float(crsf_handle_t h, uint8_t device, uint8_t numb
  * @return As crsf_send_frame().
  */
 crsf_err_t crsf_params_write_selection(crsf_handle_t h, uint8_t device,
-                                      uint8_t number, uint8_t index);
+                                       uint8_t number, uint8_t index);
 
 /**
  * @brief Write a STRING parameter on a remote device.
@@ -799,7 +813,7 @@ crsf_err_t crsf_params_write_selection(crsf_handle_t h, uint8_t device,
  * @return As crsf_send_frame(), or CRSF_ERR_INVALID_ARG when @p value is NULL.
  */
 crsf_err_t crsf_params_write_string(crsf_handle_t h, uint8_t device, uint8_t number,
-                                   const char *value);
+                                    const char *value);
 
 /**
  * @brief Drive a COMMAND parameter on a remote device (crsf.md:847).
@@ -812,7 +826,9 @@ crsf_err_t crsf_params_write_string(crsf_handle_t h, uint8_t device, uint8_t num
  * @return As crsf_send_frame().
  */
 crsf_err_t crsf_params_command(crsf_handle_t h, uint8_t device, uint8_t number,
-                              crsf_cmd_status_t status);
+                               crsf_cmd_status_t status);
+
+#endif /* CRSF_ENABLE_PARAMS */
 
 /** @} */
 
@@ -820,6 +836,8 @@ crsf_err_t crsf_params_command(crsf_handle_t h, uint8_t device, uint8_t number,
  * @name Routing
  * @{
  */
+
+#if CRSF_ENABLE_ROUTER
 
 /**
  * @brief Attach this port to a router as port index @p port_index.
@@ -847,7 +865,7 @@ crsf_err_t crsf_params_command(crsf_handle_t h, uint8_t device, uint8_t number,
  *          in crsf_router.h.
  */
 crsf_err_t crsf_router_attach(crsf_handle_t h, crsf_router_t *router,
-                             uint8_t port_index);
+                              uint8_t port_index);
 
 /**
  * @brief Detach this port from its router.
@@ -857,6 +875,8 @@ crsf_err_t crsf_router_attach(crsf_handle_t h, crsf_router_t *router,
  * @retval CRSF_ERR_INVALID_ARG @p h is NULL.
  */
 crsf_err_t crsf_router_detach(crsf_handle_t h);
+
+#endif /* CRSF_ENABLE_ROUTER */
 
 /** @} */
 
@@ -882,7 +902,7 @@ crsf_err_t crsf_router_detach(crsf_handle_t h);
  *       against real hardware — see COMPLIANCE.md §6.
  */
 crsf_err_t crsf_propose_baudrate(crsf_handle_t h, uint8_t destination,
-                                uint32_t baudrate);
+                                 uint32_t baudrate);
 
 /**
  * @brief Baudrate currently in use.
@@ -909,8 +929,8 @@ uint8_t crsf_self_address(crsf_handle_t h);
  * @{
  */
 
-/** Frame callbacks that can be registered per port. */
-#define CRSF_MAX_CALLBACKS 12
+/* CRSF_MAX_CALLBACKS is configuration; see crsf_conf.h. It sizes
+ * crsf_port::callbacks, at 5 bytes an entry. */
 
 /** One registered frame callback. */
 typedef struct {
@@ -950,9 +970,9 @@ struct crsf_port {
      * The three configuration values the protocol layer itself reads. The rest
      * of crsf_config_t describes a UART and belongs to the port, not here.
      */
-    crsf_role_t role;                       /**< which end of the link this is */
-    bool auto_respond_ping;                 /**< answer 0x28 with 0x29 */
-    bool mavlink_envelope_extended_header;  /**< 0xAA carries dest and origin */
+    crsf_role_t role;                      /**< which end of the link this is */
+    bool auto_respond_ping;                /**< answer 0x28 with 0x29 */
+    bool mavlink_envelope_extended_header; /**< 0xAA carries dest and origin */
 
     /*
      * How the protocol layer reaches the platform. Every call it makes
@@ -996,6 +1016,7 @@ struct crsf_port {
     crsf_sched_slot_t slots[CRSF_SCHED_MAX_SLOTS]; /**< telemetry scheduler */
 
     /* --- tunnels --- */
+#if CRSF_ENABLE_MAVLINK
     crsf_mavlink_reasm_t mavlink_reasm; /**< inbound 0xAA reassembly */
     crsf_mavlink_cb_t mavlink_cb;       /**< called on a complete frame */
     void *mavlink_ctx;                  /**< context for @ref mavlink_cb */
@@ -1007,7 +1028,9 @@ struct crsf_port {
      * RX task overwrite this one's frame between the copy and the callback.
      */
     uint8_t mavlink_assembled[CRSF_MAVLINK_FRAME_MAX];
+#endif /* CRSF_ENABLE_MAVLINK */
 
+#if CRSF_ENABLE_MSP
     crsf_msp_reasm_t msp_reasm; /**< inbound 0x7A/0x7B reassembly */
     uint8_t msp_origin;         /**< origin of the frame being reassembled */
     bool msp_is_response;       /**< it arrived as 0x7B rather than 0x7A */
@@ -1016,8 +1039,10 @@ struct crsf_port {
 
     /** Per-port copy of a completed MSP body; see @ref mavlink_assembled. */
     uint8_t msp_assembled[CRSF_MSP_BODY_MAX];
+#endif /* CRSF_ENABLE_MSP */
 
     /* --- parameters --- */
+#if CRSF_ENABLE_PARAMS
     crsf_param_provider_t *provider; /**< attached tree, or NULL */
 
     bool walk_active;                    /**< a host-side walk is in progress */
@@ -1027,10 +1052,13 @@ struct crsf_port {
     void *walk_ctx;                      /**< context for both walk callbacks */
     int64_t walk_sent_us;                /**< when the outstanding 0x2C went out */
     uint8_t walk_retries;                /**< retries spent on the current chunk */
+#endif                                   /* CRSF_ENABLE_PARAMS */
 
     /* --- routing --- */
+#if CRSF_ENABLE_ROUTER
     crsf_router_t *router; /**< attached router, or NULL */
     uint8_t router_port;   /**< our index within that router */
+#endif                     /* CRSF_ENABLE_ROUTER */
 
     /* --- baudrate negotiation --- */
     uint32_t pending_baudrate;  /**< agreed rate, applied after the reply is sent */

@@ -29,7 +29,7 @@ Status vocabulary is c_crsf's, unchanged:
 | Clock never returns zero | Full | Zero is the protocol layer's "never happened" sentinel, and `micros()` reads 0 for the first microsecond after reset |
 | Baudrate negotiation timing | **Partial, by construction** | A `Stream` has no "transmission complete", so `crsf_port_after_tx()` is called once per `loop()` rather than when a frame has physically left. A negotiated rate therefore takes effect one `loop()` late. That is within the negotiation's timing and is the best a `Stream` can offer. |
 | Thread safety | **Partial, by decision** | No lock. A sketch is single-threaded and paying for one would be waste. Where that stops being true — a second task on an ESP32, telemetry from an interrupt — the lock hooks must be filled in. Called out in `CRSFv3.cpp`, `CRSFv3.h` and the README rather than left implicit. |
-| AVR | **Not supported** | 3552 bytes of RAM against an ATmega328P's 2048. Refused with an `#error` rather than an incomprehensible link failure. See the README for the arithmetic. |
+| AVR | **Supported, stripped** | 3249 bytes of RAM against an ATmega328P's 2048, so the full library does not fit. `CRSF_ARDUINO_MINIMAL` in `src/crsf_local_conf.h` brings the protocol state to 542 and a whole `CrsfRxStation` sketch to 1285 of 2048, measured with avr-gcc 7.3.0. Any other configuration is still refused with an `#error` naming the switch. |
 
 ## P2. Vendored core
 
@@ -62,7 +62,7 @@ What would establish the rest, in order of value:
 | --- | --- | --- |
 | Run `examples/CrsfLoopbackSelfTest` | that this board's UART carries CRSF frames correctly at the real line rate, with real interrupt latency | one board, one jumper wire |
 | Run `examples/CrsfRxStation` against a transmitter | that a real peer's channel stream is decoded and telemetry is accepted | an ELRS or Crossfire TX module |
-| Measure with `size-avr` | the real flash cost, replacing the estimate in the README | an `avr-gcc` in CI |
+| ~~Measure with `size-avr`~~ | done: the `size-avr` job reports flash and RAM for both station sketches on `arduino:avr:nano`, and the README's table carries the measured numbers | — |
 | Browse a parameter tree from a handset | that EdgeTX / Agent Lite renders it as intended | a handset |
 
 A pass on the first line is enough to move this library off `0.x`. If you run it,

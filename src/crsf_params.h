@@ -33,6 +33,8 @@
 extern "C" {
 #endif
 
+#if CRSF_ENABLE_PARAMS
+
 /**
  * @defgroup crsf_params Parameter protocol
  * @brief Device-side provider and host-side client for 0x2B / 0x2C / 0x2D.
@@ -522,6 +524,8 @@ bool crsf_param_client_timeout(crsf_param_client_t *cl, bool give_up);
 /** @} */
 
 /** @} */
+
+#endif /* CRSF_ENABLE_PARAMS */
 
 #ifdef __cplusplus
 }

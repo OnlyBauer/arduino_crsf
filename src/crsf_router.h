@@ -31,17 +31,23 @@
 extern "C" {
 #endif
 
+#if CRSF_ENABLE_ROUTER
+
 /**
  * @defgroup crsf_router Routing
  * @brief Multi-port forwarding decisions with address learning.
  * @{
  */
 
-/** Maximum CRSF ports one router can serve. */
+/** Maximum CRSF ports one router can serve. Overridable. */
+#ifndef CRSF_ROUTER_MAX_PORTS
 #define CRSF_ROUTER_MAX_PORTS 4
+#endif
 
-/** Size of the learned address table, shared between static and learned entries. */
+/** Size of the learned address table, static and learned entries. Overridable. */
+#ifndef CRSF_ROUTER_MAX_ROUTES
 #define CRSF_ROUTER_MAX_ROUTES 16
+#endif
 
 /** No port; used for locally originated frames. */
 #define CRSF_ROUTER_PORT_LOCAL 0xFF
@@ -190,6 +196,8 @@ void crsf_router_route(crsf_router_t *r, const crsf_frame_t *frame,
                        uint8_t in_port, crsf_route_decision_t *out);
 
 /** @} */
+
+#endif /* CRSF_ENABLE_ROUTER */
 
 #ifdef __cplusplus
 }

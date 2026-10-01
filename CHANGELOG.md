@@ -89,6 +89,58 @@ that, and both are enforced by CI before a tag can be made:
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-10-01
+
+### Added
+
+- **AVR support, via compile-time feature switches.** `architectures` now lists
+  `avr`, so an Arduino Nano or Uno can install this from the Library Manager.
+  One line in the new [`src/crsf_local_conf.h`](src/crsf_local_conf.h) —
+  `#define CRSF_ARDUINO_MINIMAL 1` — drops the MAVLink and MSP tunnels, the
+  parameter protocol and the router, and cuts the telemetry scheduler to four
+  frame types.
+
+  Measured with avr-gcc 7.3.0 at `-Os`, protocol state only:
+
+  | Configuration | RAM | of 2048 |
+  | --- | --- | --- |
+  | everything on | 3249 B | 159 % |
+  | without the tunnels | 1640 B | 80 % |
+  | without tunnels and parameters | 1185 B | 58 % |
+  | `CRSF_ARDUINO_MINIMAL` | **542 B** | **26 %** |
+
+  Whole sketches for `arduino:avr:nano`: `CrsfRxStation` is 8662 bytes of flash
+  (28 %) and 1285 of RAM (62 %), `CrsfTxStation` 12400 (40 %) and 1305 (63 %).
+
+  0.2.0 said AVR was impossible and the numbers were not close. That was wrong,
+  and wrong for an identifiable reason: it counted the tunnels and the parameter
+  protocol and never the telemetry scheduler, which is the largest single item
+  in a port. A scheduler slot holds a whole 60-byte payload, so the default
+  twelve are 900 bytes — 44 % of an ATmega328P's RAM on their own. With the
+  slots configurable, the arithmetic changes completely.
+
+- `src/crsf_local_conf.h`, this library's own file, read by the core before it
+  applies its defaults. It exists because the Arduino IDE cannot pass `-D` and
+  these switches must be seen by every translation unit. PlatformIO users can
+  keep using `build_flags`; everything is `#ifndef`-guarded, so `-D` wins.
+- An `arduino:avr:nano` cell in the `build-examples` matrix, and the **`size-avr`
+  job the README has promised since 0.1.0**, which reports real flash and RAM
+  for both station sketches.
+
+### Changed
+
+- The vendored core moves to c_crsf 1.1.0, which is where the switches are
+  implemented. `tools/sync_core.sh` now also protects `src/crsf_local_conf.h`
+  from being deleted on a sync, as it already protected `crsf_arduino_conf.h`.
+- `src/crsf_arduino_conf.h`'s AVR `#error` tests the configuration rather than
+  the architecture: it fires only when the tunnels or the parameter protocol
+  are left on, and names the switch to set.
+- `CrsfRxStation` and `CrsfTxStation` gained an AVR branch. An ATmega328P has
+  one hardware UART and the USB console is on it, so on AVR the sketch talks
+  CRSF on `Serial` and prints nothing — which is what a receiver on a Nano does
+  anyway. The other four examples need features AVR has no room for and are not
+  built for it.
+
 ### Changed
 
 - Shortened the comments throughout, by about 200 lines. `.clang-tidy` lost

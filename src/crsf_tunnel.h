@@ -46,6 +46,7 @@ typedef enum {
     CRSF_REASM_MALFORMED,      /**< header/length inconsistent */
 } crsf_reasm_result_t;
 
+#if CRSF_ENABLE_MAVLINK
 /**
  * @name 0xAA MAVLink Envelope
  * @{
@@ -156,6 +157,8 @@ bool crsf_mavlink_split_init_chunked(crsf_mavlink_split_t *ctx, const uint8_t *d
 bool crsf_mavlink_split_next(crsf_mavlink_split_t *ctx, crsf_mavlink_envelope_t *out);
 
 /** @} */
+#endif /* CRSF_ENABLE_MAVLINK */
+#if CRSF_ENABLE_MSP
 
 /**
  * @name 0x7A / 0x7B MSP
@@ -169,7 +172,9 @@ bool crsf_mavlink_split_next(crsf_mavlink_split_t *ctx, crsf_mavlink_envelope_t 
  * sensibly; larger frames are rejected with CRSF_REASM_OVERFLOW rather than
  * silently truncated.
  */
+#ifndef CRSF_MSP_BODY_MAX
 #define CRSF_MSP_BODY_MAX 512
+#endif
 
 /**
  * @brief Build an MSP status byte (crsf.md:1219).
@@ -336,6 +341,7 @@ bool crsf_msp_split_init(crsf_msp_split_t *ctx, const uint8_t *body, size_t len,
 size_t crsf_msp_split_next(crsf_msp_split_t *ctx, uint8_t *out, size_t out_size);
 
 /** @} */
+#endif /* CRSF_ENABLE_MSP */
 
 /** @} */
 

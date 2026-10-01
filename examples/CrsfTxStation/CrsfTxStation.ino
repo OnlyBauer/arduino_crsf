@@ -33,6 +33,13 @@ Uart CrsfSerial(PA10, PA9);
 
 #if defined(ARDUINO_ARCH_STM32)
 CRSFv3 crsf(CrsfSerial);
+#elif defined(ARDUINO_ARCH_AVR)
+/*
+ * An ATmega328P has one hardware UART and the USB console is on it, so CRSF
+ * takes it and this sketch prints nothing. A Nano has no second UART to give.
+ * AVR also needs CRSF_ARDUINO_MINIMAL -- see src/crsf_local_conf.h.
+ */
+CRSFv3 crsf(Serial);
 #else
 CRSFv3 crsf(Serial1);
 #endif

@@ -12,6 +12,12 @@
 #include "crsf_codec.h"
 #include <string.h>
 
+/** Placeholder: ISO C forbids an empty translation unit, and every function
+ *  in this file can be configured out. */
+typedef int crsf_params_translation_unit_is_not_empty;
+
+#if CRSF_ENABLE_PARAMS
+
 /* ------------------------------------------------------------------------- */
 /* small write/read helpers, all bounds-checked                              */
 /* ------------------------------------------------------------------------- */
@@ -790,3 +796,5 @@ bool crsf_param_client_timeout(crsf_param_client_t *cl, bool give_up)
     client_advance(cl);
     return !cl->finished;
 }
+
+#endif /* CRSF_ENABLE_PARAMS */

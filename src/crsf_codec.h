@@ -244,6 +244,7 @@ uint16_t crsf_altitude_pack(int32_t altitude_dm);
  *         -2690..2617 cm/s across the whole int8 input range, so the result
  *         never approaches the int16 limits.
  */
+#if CRSF_ENABLE_FLOAT_MATH
 int16_t crsf_vspeed_unpack(int8_t packed);
 
 /**
@@ -252,6 +253,7 @@ int16_t crsf_vspeed_unpack(int8_t packed);
  * @return Wire byte; resolution coarsens as the magnitude grows.
  */
 int8_t crsf_vspeed_pack(int16_t v_cm_s);
+#endif /* CRSF_ENABLE_FLOAT_MATH */
 
 /** @} */
 
@@ -359,6 +361,7 @@ bool crsf_decode_battery(const uint8_t *pl, size_t len, crsf_battery_t *out);
  * @param in  Altitude and vertical speed; both are packed lossily.
  * @return CRSF_PAYLOAD_SIZE_BARO_ALTITUDE.
  */
+#if CRSF_ENABLE_FLOAT_MATH
 size_t crsf_encode_baro_altitude(uint8_t *out, const crsf_baro_altitude_t *in);
 
 /**
@@ -376,6 +379,7 @@ size_t crsf_encode_baro_altitude(uint8_t *out, const crsf_baro_altitude_t *in);
  * @retval false Fewer than 2 bytes.
  */
 bool crsf_decode_baro_altitude(const uint8_t *pl, size_t len, crsf_baro_altitude_t *out);
+#endif /* CRSF_ENABLE_FLOAT_MATH */
 
 /**
  * @brief Encode 0x0A Airspeed (crsf.md:380).

@@ -7,9 +7,14 @@
 #include "crsf_tunnel.h"
 #include <string.h>
 
+/** Placeholder: ISO C forbids an empty translation unit, and every function
+ *  in this file can be configured out. */
+typedef int crsf_tunnel_translation_unit_is_not_empty;
+
 /* ------------------------------------------------------------------------- */
 /* 0xAA MAVLink Envelope                                                     */
 /* ------------------------------------------------------------------------- */
+#if CRSF_ENABLE_MAVLINK
 
 void crsf_mavlink_reasm_reset(crsf_mavlink_reasm_t *ctx)
 {
@@ -137,9 +142,12 @@ bool crsf_mavlink_split_next(crsf_mavlink_split_t *ctx, crsf_mavlink_envelope_t 
     return true;
 }
 
+#endif /* CRSF_ENABLE_MAVLINK */
+
 /* ------------------------------------------------------------------------- */
 /* 0x7A / 0x7B MSP                                                           */
 /* ------------------------------------------------------------------------- */
+#if CRSF_ENABLE_MSP
 
 bool crsf_msp_body_length(const uint8_t *body, size_t have, uint8_t version,
                           size_t *out_total)
@@ -299,3 +307,5 @@ size_t crsf_msp_split_next(crsf_msp_split_t *ctx, uint8_t *out, size_t out_size)
 
     return chunk + 1;
 }
+
+#endif /* CRSF_ENABLE_MSP */
